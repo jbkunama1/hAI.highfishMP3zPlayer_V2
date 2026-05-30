@@ -1,0 +1,18 @@
+# Zugangsdaten — NIEMALS committen!
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# Icons werden lokal generiert
+icon-192.png
+icon-512.png
+
+# System
+.DS_Store
+Thumbs.db
+*.log

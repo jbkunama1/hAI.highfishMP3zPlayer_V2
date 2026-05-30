@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>hAI.highfishMP3zPlayer — Self-hosted Samba Music Streaming</title>
+  <meta name="description" content="Self-hosted PWA Musik-Streaming für DietPi. 60k Tracks, Shuffle, APK, Album-Art, Passwortschutz."/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;700&family=Syne:wght@800;900&family=Syne+Mono&display=swap" rel="stylesheet"/>
+  <style>
+    :root{--bg:#0a0a0f;--surf:#13131c;--card:#1a1a28;--border:#2a2a3f;
+      --acc:#ff5e3a;--acc2:#ff9a3c;--text:#e8e8f0;--muted:#6a6a88;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;overflow-x:hidden;}
+
+    nav{position:fixed;top:0;left:0;right:0;z-index:100;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 40px;background:rgba(10,10,15,.88);
+      backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+    .nav-logo{font-family:'Syne',sans-serif;font-weight:900;font-size:20px;
+      background:linear-gradient(135deg,var(--acc),var(--acc2));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .nav-links{display:flex;gap:24px;align-items:center;}
+    .nav-links a{color:var(--muted);text-decoration:none;font-size:14px;transition:color .2s;}
+    .nav-links a:hover{color:var(--text);}
+    .nav-cta{background:linear-gradient(135deg,var(--acc),var(--acc2));
+      color:#fff!important;padding:8px 18px;border-radius:8px;font-weight:700!important;}
+
+    .hero{min-height:100vh;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;text-align:center;
+      padding:120px 24px 80px;position:relative;overflow:hidden;}
+    .hero::after{content:'';position:absolute;top:50%;left:50%;
+      transform:translate(-50%,-50%);width:700px;height:700px;
+      background:radial-gradient(ellipse,rgba(255,94,58,.12) 0%,transparent 70%);
+      pointer-events:none;}
+
+    .hero-tag{display:inline-flex;align-items:center;gap:8px;
+      background:var(--card);border:1px solid var(--border);
+      padding:6px 14px;border-radius:20px;font-size:12px;
+      font-family:'Syne Mono',monospace;letter-spacing:1px;color:var(--acc);
+      margin-bottom:32px;animation:fadeUp .6s ease both;}
+    .hero-title{font-family:'Syne',sans-serif;font-weight:900;
+      font-size:clamp(48px,10vw,100px);line-height:.95;letter-spacing:-4px;
+      margin-bottom:8px;animation:fadeUp .6s .1s ease both;}
+    .hero-title .l1{display:block;color:var(--text);}
+    .hero-title .l2{display:block;background:linear-gradient(135deg,var(--acc),var(--acc2));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .hero-sub{font-size:17px;color:var(--muted);max-width:540px;
+      line-height:1.6;margin:24px auto 40px;animation:fadeUp .6s .2s ease both;}
+    .hero-sub strong{color:var(--text);}
+    .hero-btns{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;
+      animation:fadeUp .6s .3s ease both;}
+    .btn-p{display:inline-flex;align-items:center;gap:8px;
+      background:linear-gradient(135deg,var(--acc),var(--acc2));
+      color:#fff;padding:14px 28px;border-radius:12px;font-weight:700;
+      font-size:15px;text-decoration:none;
+      box-shadow:0 8px 28px rgba(255,94,58,.35);transition:transform .2s;}
+    .btn-p:hover{transform:translateY(-2px);}
+    .btn-g{display:inline-flex;align-items:center;gap:8px;
+      border:1px solid var(--border);color:var(--text);padding:14px 28px;
+      border-radius:12px;font-weight:700;font-size:15px;text-decoration:none;
+      transition:border-color .2s,background .2s;}
+    .btn-g:hover{border-color:var(--acc);background:rgba(255,94,58,.05);}
+
+    /* Mockup */
+    .hero-mockup{margin-top:60px;width:100%;max-width:620px;
+      background:var(--card);border:1px solid var(--border);
+      border-radius:16px;overflow:hidden;
+      box-shadow:0 40px 80px rgba(0,0,0,.5);animation:fadeUp .6s .4s ease both;}
+    .mb{background:var(--surf);padding:11px 14px;display:flex;align-items:center;
+      gap:7px;border-bottom:1px solid var(--border);}
+    .dot{width:11px;height:11px;border-radius:50%;}
+    .dot.r{background:#ff5f57;}.dot.y{background:#febc2e;}.dot.g{background:#28c840;}
+    .murl{flex:1;background:var(--card);border-radius:5px;padding:4px 10px;
+      font-size:11px;font-family:'Syne Mono',monospace;color:var(--muted);margin:0 6px;}
+    .app-ui{display:grid;grid-template-rows:auto auto 1fr auto;height:340px;}
+    .uh{background:var(--surf);padding:11px 14px;display:flex;align-items:center;
+      gap:10px;border-bottom:1px solid var(--border);}
+    .ulogo{font-family:'Syne',sans-serif;font-weight:900;font-size:17px;
+      background:linear-gradient(135deg,var(--acc),var(--acc2));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .upath{font-size:11px;color:var(--muted);flex:1;}
+    .us{background:var(--surf);padding:7px 12px;border-bottom:1px solid var(--border);}
+    .usi{background:var(--card);border:1px solid var(--border);border-radius:6px;
+      padding:6px 10px;font-size:11px;color:var(--muted);}
+    .ul{overflow:hidden;padding:6px;}
+    .usl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:5px 6px 2px;}
+    .ui{display:flex;align-items:center;gap:7px;padding:6px 7px;border-radius:7px;font-size:11px;}
+    .ui.a{background:var(--card);color:var(--acc);}
+    .up{background:var(--surf);border-top:1px solid var(--border);
+      padding:9px 12px;display:flex;align-items:center;gap:8px;position:relative;}
+    .uprog{position:absolute;top:0;left:0;right:0;height:2px;background:var(--border);}
+    .uprogf{height:100%;width:38%;background:linear-gradient(to right,var(--acc),var(--acc2));}
+    .uart{width:36px;height:36px;border-radius:6px;background:var(--card);
+      display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+    .upi{flex:1;overflow:hidden;}
+    .upt{font-size:11px;font-weight:700;color:var(--acc);}
+    .ups{font-size:9px;color:var(--muted);}
+    .uctrls{display:flex;gap:5px;align-items:center;}
+    .ucs{font-size:12px;color:var(--muted);}
+    .ucplay{width:28px;height:28px;border-radius:50%;
+      background:linear-gradient(135deg,var(--acc),var(--acc2));
+      display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;}
+
+    /* Sections */
+    section{padding:90px 24px;position:relative;z-index:1;}
+    .container{max-width:1080px;margin:0 auto;}
+    .sl{font-family:'Syne Mono',monospace;font-size:11px;letter-spacing:3px;
+      text-transform:uppercase;color:var(--acc);margin-bottom:12px;}
+    .st{font-family:'Syne',sans-serif;font-weight:900;
+      font-size:clamp(32px,5vw,56px);line-height:1.05;
+      letter-spacing:-2px;margin-bottom:50px;}
+
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;}
+    .card{background:var(--card);border:1px solid var(--border);
+      border-radius:14px;padding:26px;transition:border-color .2s,transform .2s;}
+    .card:hover{border-color:var(--acc);transform:translateY(-3px);}
+    .fi{font-size:34px;margin-bottom:14px;display:block;}
+    .ft{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;margin-bottom:7px;}
+    .fd{font-size:13px;color:var(--muted);line-height:1.6;}
+
+    .arch-bg{background:var(--surf);}
+    pre{background:var(--card);border:1px solid var(--border);
+      border-radius:10px;padding:16px;overflow-x:auto;
+      font-family:'Syne Mono',monospace;font-size:12px;color:var(--text);line-height:1.6;}
+    .cc{color:var(--muted);}.cm{color:var(--acc2);}.cs{color:#7ec8e3;}.co{color:#28c840;}
+
+    .steps{display:flex;flex-direction:column;gap:22px;}
+    .step{display:flex;gap:18px;align-items:flex-start;}
+    .snum{width:38px;height:38px;border-radius:11px;
+      background:linear-gradient(135deg,var(--acc),var(--acc2));
+      color:#fff;font-family:'Syne',sans-serif;font-weight:900;font-size:17px;
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:3px;}
+    .sc{flex:1;}
+    .stitle{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;margin-bottom:6px;}
+    .sdesc{color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:10px;}
+
+    .badges{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:36px;}
+    .badge{display:inline-flex;align-items:center;gap:5px;
+      background:var(--card);border:1px solid var(--border);
+      border-radius:5px;padding:3px 9px;
+      font-family:'Syne Mono',monospace;font-size:10px;color:var(--muted);}
+    .bd{width:7px;height:7px;border-radius:50%;background:var(--acc);}
+
+    footer{border-top:1px solid var(--border);padding:36px 40px;
+      display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;}
+    .flogo{font-family:'Syne',sans-serif;font-weight:900;font-size:18px;
+      background:linear-gradient(135deg,var(--acc),var(--acc2));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .ftxt{font-size:12px;color:var(--muted);}
+    .flinks{display:flex;gap:18px;}
+    .flinks a{color:var(--muted);text-decoration:none;font-size:12px;transition:color .15s;}
+    .flinks a:hover{color:var(--text);}
+
+    @keyframes fadeUp{from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:translateY(0);}}
+    .reveal{opacity:0;transform:translateY(28px);transition:opacity .5s,transform .5s;}
+    .reveal.v{opacity:1;transform:translateY(0);}
+
+    @media(max-width:768px){
+      nav{padding:12px 18px;}
+      .nav-links a:not(.nav-cta){display:none;}
+      .hero{padding:95px 18px 55px;}
+      .hero-btns{flex-direction:column;align-items:center;}
+      section{padding:65px 18px;}
+      footer{padding:26px 18px;flex-direction:column;align-items:flex-start;}
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">hAI.MP3z</div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#install">Install</a>
+    <a href="#api">API</a>
+    <a href="https://github.com/therealteacher/hAI.highfishMP3zPlayer" class="nav-cta">⭐ GitHub</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-tag">🎵 Self-hosted &nbsp;·&nbsp; Open Source &nbsp;·&nbsp; 60k Tracks &nbsp;·&nbsp; Highfish AI</div>
+  <h1 class="hero-title">
+    <span class="l1">Deine Musik.</span>
+    <span class="l2">Überall.</span>
+  </h1>
+  <p class="hero-sub">
+    <strong>hAI.highfishMP3zPlayer</strong> streamt deine komplette Heimmusiksammlung —
+    ohne Cloud, ohne Abo. PWA + Android APK, Shuffle, Passwortschutz, Album-Art.
+  </p>
+  <div class="hero-btns">
+    <a href="https://github.com/therealteacher/hAI.highfishMP3zPlayer" class="btn-p">⬇ Download &amp; Install</a>
+    <a href="#features" class="btn-g">🔍 Features entdecken</a>
+  </div>
+
+  <div class="hero-mockup">
+    <div class="mb">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <div class="murl">http://samba.arbeitermili.eu</div>
+    </div>
+    <div class="app-ui">
+      <div class="uh">
+        <div class="ulogo">MP3z</div>
+        <div class="upath">~/Rock/AC·DC/Back in Black</div>
+        <span style="color:var(--muted);font-size:13px">⚙ ☰</span>
+      </div>
+      <div class="us"><div class="usi">🔍 &nbsp;Suchen… &nbsp;<span style="color:var(--acc);font-size:9px">GLOBAL</span></div></div>
+      <div class="ul">
+        <div class="usl">Ordner</div>
+        <div class="ui"><span>📁</span><span>Back in Black</span></div>
+        <div class="usl">Musik (14)</div>
+        <div class="ui a"><span>🎵</span><span style="flex:1">Thunderstruck</span><span>＋</span></div>
+        <div class="ui"><span>🎵</span><span style="flex:1">Back in Black</span><span>＋</span></div>
+        <div class="ui"><span>🎵</span><span style="flex:1">Hells Bells</span><span>＋</span></div>
+      </div>
+      <div class="up">
+        <div class="uprog"><div class="uprogf"></div></div>
+        <div class="uart">⚡</div>
+        <div class="upi"><div class="upt">Thunderstruck</div><div class="ups">AC/DC · Back in Black</div></div>
+        <div class="uctrls">
+          <span class="ucs">⏮</span>
+          <span class="ucs" style="color:var(--acc)">🔀</span>
+          <div class="ucplay">⏸</div>
+          <span class="ucs">🔁</span>
+          <span class="ucs">⏭</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="container">
+    <div class="sl">Was kann es?</div>
+    <h2 class="st reveal">Features</h2>
+    <div class="grid">
+      <div class="card reveal"><span class="fi">⚡</span><div class="ft">60k Tracks</div><div class="fd">In-Memory-Index + Paginierung. Suche in unter 50ms nach Index-Build.</div></div>
+      <div class="card reveal"><span class="fi">🔍</span><div class="ft">Globale Suche</div><div class="fd">Serverseitige Volltextsuche. Ab 3 Zeichen automatisch global.</div></div>
+      <div class="card reveal"><span class="fi">🔀</span><div class="ft">Shuffle &amp; Repeat</div><div class="fd">Fisher-Yates Shuffle der Queue. Repeat: Aus / Einen / Alle. Tastenkürzel S und R.</div></div>
+      <div class="card reveal"><span class="fi">🔐</span><div class="ft">Passwortschutz</div><div class="fd">Login-Screen mit Samba-Credentials. Timing-Attack-sicher via secrets.compare_digest.</div></div>
+      <div class="card reveal"><span class="fi">🖼</span><div class="ft">Album-Cover</div><div class="fd">ID3-Tags (MP3/FLAC/M4A) oder cover.jpg. 24h Browser-Cache.</div></div>
+      <div class="card reveal"><span class="fi">📱</span><div class="ft">PWA + APK</div><div class="fd">Service Worker, manifest.json. PWABuilder → echte Android APK in Minuten.</div></div>
+      <div class="card reveal"><span class="fi">📋</span><div class="ft">Queue</div><div class="fd">Einzelne Tracks oder ganzen Ordner (paginiert). Queue mischen, leeren, verwalten.</div></div>
+      <div class="card reveal"><span class="fi">🏠</span><div class="ft">100% Self-hosted</div><div class="fd">Eine Python-Datei. Kein Docker. Läuft auf DietPi/Debian mit systemd-Autostart.</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="install" class="arch-bg">
+  <div class="container">
+    <div class="sl">Los gehts</div>
+    <h2 class="st reveal">Installation</h2>
+    <div class="badges reveal">
+      <div class="badge"><div class="bd"></div>Python 3.9+</div>
+      <div class="badge"><div class="bd"></div>DietPi / Debian 11</div>
+      <div class="badge"><div class="bd" style="background:var(--acc2)"></div>flask · flask-cors · mutagen · python-dotenv · pillow</div>
+      <div class="badge"><div class="bd" style="background:#7ec8e3"></div>Port 80 oder 8080</div>
+    </div>
+    <div class="steps">
+      <div class="step reveal"><div class="snum">1</div><div class="sc"><div class="stitle">Repo klonen</div><div class="sdesc">Ins Zielverzeichnis klonen.</div><pre><span class="cm">mkdir -p /opt/mp3z && cd /opt/mp3z</span>
+<span class="cm">git clone https://github.com/therealteacher/hAI.highfishMP3zPlayer.git .</span></pre></div></div>
+
+      <div class="step reveal"><div class="snum">2</div><div class="sc"><div class="stitle">Dependencies</div><div class="sdesc">Alle Abhängigkeiten auf einmal.</div><pre><span class="cm">pip install -r requirements.txt --break-system-packages</span></pre></div></div>
+
+      <div class="step reveal"><div class="snum">3</div><div class="sc"><div class="stitle">.env konfigurieren</div><div class="sdesc">Zugangsdaten setzen — wird nicht committet.</div><pre><span class="cm">cp .env.example .env && joe .env</span>
+<span class="cc"># Anpassen:</span>
+<span class="cs">MUSIC_ROOT=/mnt/USBHDD_MP3z</span>
+<span class="cs">SMB_USER=daniel</span>
+<span class="cs">SMB_PASS=deinSambaPasswort</span></pre></div></div>
+
+      <div class="step reveal"><div class="snum">4</div><div class="sc"><div class="stitle">Icons generieren</div><div class="sdesc">Einmalig ausführen.</div><pre><span class="cm">python3 generate_icons.py</span>
+<span class="co">✓ icon-192.png</span>
+<span class="co">✓ icon-512.png</span></pre></div></div>
+
+      <div class="step reveal"><div class="snum">5</div><div class="sc"><div class="stitle">Starten</div><pre><span class="cm">python3 mp3z_server.py</span>
+<span class="co">🎵 hAI.highfishMP3zPlayer  v2.0.0</span>
+<span class="co">✓ Index: 61243 Dateien in 18.3s</span></pre></div></div>
+
+      <div class="step reveal"><div class="snum">6</div><div class="sc"><div class="stitle">Autostart systemd</div><pre><span class="cm">cp systemd/mp3z.service /etc/systemd/system/</span>
+<span class="cm">systemctl enable mp3z && systemctl start mp3z</span></pre></div></div>
+
+      <div class="step reveal"><div class="snum">7</div><div class="sc"><div class="stitle">APK via PWABuilder</div><pre><span class="cs">https://pwabuilder.com</span>
+<span class="cc"># URL eingeben → Android → Download Package</span></pre></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="api">
+  <div class="container">
+    <div class="sl">Entwickler-Docs</div>
+    <h2 class="st reveal">REST API</h2>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+      <div class="card reveal"><div class="ft" style="font-family:'Syne Mono',monospace;color:var(--acc)">POST /api/verify</div><div class="fd" style="margin:8px 0">Login — prüft API-Key, gibt User zurück</div><pre style="font-size:11px"><span class="cc">{"apikey": "deinPasswort"}</span></pre></div>
+      <div class="card reveal"><div class="ft" style="font-family:'Syne Mono',monospace;color:var(--acc)">GET /api/browse</div><div class="fd" style="margin:8px 0">Paginiertes Verzeichnis-Listing</div><pre style="font-size:11px"><span class="cc">?path=Artist/Album&offset=0&limit=80</span></pre></div>
+      <div class="card reveal"><div class="ft" style="font-family:'Syne Mono',monospace;color:var(--acc)">GET /api/search</div><div class="fd" style="margin:8px 0">Globale Suche über alle 60k Tracks</div><pre style="font-size:11px"><span class="cc">?q=dire+straits&offset=0&limit=100</span></pre></div>
+      <div class="card reveal"><div class="ft" style="font-family:'Syne Mono',monospace;color:var(--acc)">GET /api/stream</div><div class="fd" style="margin:8px 0">Audio-Streaming mit Range-Support</div><pre style="font-size:11px"><span class="cc">?path=Artist/song.mp3&apikey=...</span>
+<span class="cc">Header: Range: bytes=0-</span></pre></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="flogo">hAI.MP3z</div>
+  <div class="ftxt">Made with 🎵 + ☕ by <strong>TheRealTeacher</strong> / Highfish AI · MIT</div>
+  <div class="flinks">
+    <a href="https://github.com/therealteacher/hAI.highfishMP3zPlayer">GitHub</a>
+    <a href="https://highfishai.de">Highfish AI</a>
+    <a href="https://pwabuilder.com">PWABuilder</a>
+  </div>
+</footer>
+
+<script>
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('v');}),{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
