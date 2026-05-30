@@ -1,0 +1,16 @@
+[Unit]
+Description=MP3z Samba Player Backend
+After=network.target local-fs.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/mp3z
+ExecStart=/usr/bin/python3 /opt/mp3z/mp3z_server.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
