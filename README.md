@@ -1,5 +1,9 @@
 <div align="center">
 
+<a href="https://www.buymeacoffee.com/highfish">
+<img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174">
+</a>
+
 ```
  _     _    ___    _       _       _       _      _     __   __  ____  ____  _____
 | |__ / \  |_ _|  | |__   (_) __ _| |__   / _|   | |  / /  / / |  _ \|___ \|_  /
@@ -367,3 +371,4 @@ MIT License — mach damit was du willst, aber nenn die Quelle. 🤝
 *Self-hosted · Privacy-first · No cloud needed · 60k Tracks kein Problem*
 
 </div>
+
