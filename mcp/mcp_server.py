@@ -44,6 +44,7 @@ class Config:
         self.api_key = os.getenv('MP3Z_API_KEY', '')
         self.music_root = os.getenv('MUSIC_ROOT', '')
         self.music_roots = self._parse_roots(os.getenv('MUSIC_ROOTS', ''))
+        self.stream_base = os.getenv('MP3Z_STREAM_BASE', self.base_url).rstrip('/')
         self.http_mode = bool(self.base_url)
 
     def _parse_roots(self, raw):
@@ -219,10 +220,12 @@ def _http_get(route: str, params: dict):
 
 
 def _stream_url(path: str) -> str:
+    if not CONF.stream_base:
+        raise ValueError('MP3Z_STREAM_BASE (or MP3Z_BASE_URL) must be set to build a stream URL')
     qs = urllib.parse.urlencode({'path': path})
     if CONF.api_key:
         qs += '&' + urllib.parse.urlencode({'apikey': CONF.api_key})
-    return f'{CONF.base_url}/api/stream?{qs}'
+    return f'{CONF.stream_base}/api/stream?{qs}'
 
 
 # ── tool implementations ───────────────────────────────────────────────────────

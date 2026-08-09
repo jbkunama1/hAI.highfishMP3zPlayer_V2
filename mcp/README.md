@@ -26,6 +26,7 @@ pip install -r requirements.txt
 | `MUSIC_ROOT` | ungesetzt | Musikwurzel **Lokaler Modus** |
 | `MUSIC_ROOTS` | ungesetzt | Multi-Root: JSON `{"usb": "/mnt/HDD", "nas": "/srv/musik"}` oder Liste `["/a", "/b"]` |
 | `MP3Z_BASE_URL` | ungesetzt | **HTTP-Modus**: Basis-URL des MP3z-Servers (z. B. `http://mp3z:8066`) |
+| `MP3Z_STREAM_BASE` | `MP3Z_BASE_URL` | Basis-URL für lokale Streams (falls Streaming-URL nicht `/api/stream` am MP3z-Server folgt) |
 | `MP3Z_API_KEY` | `API_KEY_OVERRIDE` / `SMB_PASS` | API-Key für den MP3z-Server (nicht gehärtet, nur env) |
 | `MCP_DISPLAY_NAME` | `mp3z` | Anzeigename des MCP-Servers |
 
