@@ -224,10 +224,12 @@ Das Repo baut automatisch ein **Docker-Image** via GitHub Actions und pusht es z
    ```
 5. **Deploy the stack**
 
+Der Service lauscht **intern** auf Port 80 und ist **extern** unter **Port 8066** erreichbar (`http://<deine-IP>:8066`).
+
 **Manuell via Docker:**
 ```bash
 docker pull ghcr.io/jbkunama1/hai.highfishmp3zplayer_v2:latest
-docker run -d --name mp3z -p 80:80 \
+docker run -d --name mp3z -p 8066:80 \
   -v /mnt/USBHDD_MP3z:/music:ro \
   -e SMB_USER=daniel -e SMB_PASS=deinSambaPasswort \
   ghcr.io/jbkunama1/hai.highfishmp3zplayer_v2:latest
@@ -241,7 +243,8 @@ docker run -d --name mp3z -p 80:80 \
 
 ```
 Fritzbox Port-Forwarding:
-  Extern 80 → DietPi-IP : 80
+  Extern 8066 → DietPi-IP : 8066   (Docker-Setup, Host-Port 8066)
+  – oder direkt –  Extern 80 → DietPi-IP : 80   (systemd-Setup)
 
 Cloudflare DNS:
   A-Record: samba.arbeitermili.eu → WAN-IP

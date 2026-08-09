@@ -4,7 +4,7 @@ services:
     container_name: mp3z
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8066:80"
     environment:
       HOST: 0.0.0.0
       PORT: "80"
