@@ -174,12 +174,13 @@
     <a href="#features">Features</a>
     <a href="#install">Install</a>
     <a href="#api">API</a>
-    <a href="https://github.com/therealteacher/hAI.highfishMP3zPlayer" class="nav-cta">⭐ GitHub</a>
+    <a href="https://github.com/jbkunama1/hAI.highfishMP3zPlayer_V2" class="nav-cta">⭐ GitHub</a>
   </div>
 </nav>
 
 <section class="hero">
   <div class="hero-tag">🎵 Self-hosted &nbsp;·&nbsp; Open Source &nbsp;·&nbsp; 60k Tracks &nbsp;·&nbsp; Highfish AI</div>
+  <img src="icon-192.png" width="96" height="96" alt="MP3z Logo" style="margin-bottom:24px;border-radius:20px;box-shadow:0 8px 28px rgba(255,94,58,.25);animation:fadeUp .6s .05s ease both;"/>
   <h1 class="hero-title">
     <span class="l1">Deine Musik.</span>
     <span class="l2">Überall.</span>
@@ -189,7 +190,7 @@
     ohne Cloud, ohne Abo. PWA + Android APK, Shuffle, Passwortschutz, Album-Art.
   </p>
   <div class="hero-btns">
-    <a href="https://github.com/therealteacher/hAI.highfishMP3zPlayer" class="btn-p">⬇ Download &amp; Install</a>
+    <a href="https://github.com/jbkunama1/hAI.highfishMP3zPlayer_V2" class="btn-p">⬇ Download &amp; Install</a>
     <a href="#features" class="btn-g">🔍 Features entdecken</a>
   </div>
 
@@ -234,14 +235,16 @@
     <div class="sl">Was kann es?</div>
     <h2 class="st reveal">Features</h2>
     <div class="grid">
-      <div class="card reveal"><span class="fi">⚡</span><div class="ft">60k Tracks</div><div class="fd">In-Memory-Index + Paginierung. Suche in unter 50ms nach Index-Build.</div></div>
-      <div class="card reveal"><span class="fi">🔍</span><div class="ft">Globale Suche</div><div class="fd">Serverseitige Volltextsuche. Ab 3 Zeichen automatisch global.</div></div>
+      <div class="card reveal"><span class="fi">⚡</span><div class="ft">60k Tracks</div><div class="fd">In-Memory-Index + Paginierung (80/Seite). Suche in unter 50ms nach Index-Build.</div></div>
+      <div class="card reveal"><span class="fi">🎵</span><div class="ft">Streaming</div><div class="fd">HTTP Range-Requests → Seek ohne Buffering. Formate: MP3, FLAC, M4A, OGG, WAV, AAC, OPUS, WMA.</div></div>
+      <div class="card reveal"><span class="fi">🔍</span><div class="ft">Globale Suche</div><div class="fd">Serverseitige Volltextsuche über alle 60k Dateien. Ab 3 Zeichen automatisch global.</div></div>
       <div class="card reveal"><span class="fi">🔀</span><div class="ft">Shuffle &amp; Repeat</div><div class="fd">Fisher-Yates Shuffle der Queue. Repeat: Aus / Einen / Alle. Tastenkürzel S und R.</div></div>
-      <div class="card reveal"><span class="fi">🔐</span><div class="ft">Passwortschutz</div><div class="fd">Login-Screen mit Samba-Credentials. Timing-Attack-sicher via secrets.compare_digest.</div></div>
+      <div class="card reveal"><span class="fi">🔐</span><div class="ft">Passwortschutz</div><div class="fd">Login-Screen mit Samba-Credentials als API-Key. Timing-Attack-sicher via secrets.compare_digest + SHA-256-Hash.</div></div>
       <div class="card reveal"><span class="fi">🖼</span><div class="ft">Album-Cover</div><div class="fd">ID3-Tags (MP3/FLAC/M4A) oder cover.jpg. 24h Browser-Cache.</div></div>
-      <div class="card reveal"><span class="fi">📱</span><div class="ft">PWA + APK</div><div class="fd">Service Worker, manifest.json. PWABuilder → echte Android APK in Minuten.</div></div>
+      <div class="card reveal"><span class="fi">📱</span><div class="ft">PWA + APK</div><div class="fd">Service Worker, manifest.json, Lockscreen-Controls. PWABuilder → echte Android APK in Minuten.</div></div>
       <div class="card reveal"><span class="fi">📋</span><div class="ft">Queue</div><div class="fd">Einzelne Tracks oder ganzen Ordner (paginiert). Queue mischen, leeren, verwalten.</div></div>
-      <div class="card reveal"><span class="fi">🏠</span><div class="ft">100% Self-hosted</div><div class="fd">Eine Python-Datei. Läuft auf DietPi/Debian mit systemd-Autostart oder als Docker/Portainer-Stack (GHCR, Port 8066).</div></div>
+      <div class="card reveal"><span class="fi">🌐</span><div class="ft">CORS + Cloudflare</div><div class="fd">Zugriff via Cloudflare / eigener Domain. Kostenlos HTTPS durch Cloudflare-Proxy.</div></div>
+      <div class="card reveal"><span class="fi">🏠</span><div class="ft">100% Self-hosted</div><div class="fd">Eine Python-Datei. DietPi/Debian mit systemd-Autostart oder Docker/Portainer-Stack (GHCR, Port 8066, highfishNetwork).</div></div>
     </div>
   </div>
 </section>
@@ -254,11 +257,11 @@
       <div class="badge"><div class="bd"></div>Python 3.9+</div>
       <div class="badge"><div class="bd"></div>DietPi / Debian 11</div>
       <div class="badge"><div class="bd" style="background:var(--acc2)"></div>flask · flask-cors · mutagen · python-dotenv · pillow</div>
-      <div class="badge"><div class="bd" style="background:#7ec8e3"></div>Port 80 / Docker 8066</div>
+      <div class="badge"><div class="bd" style="background:#7ec8e3"></div>Port 80 / Docker 8066 · highfishNetwork</div>
     </div>
     <div class="steps">
       <div class="step reveal"><div class="snum">1</div><div class="sc"><div class="stitle">Repo klonen</div><div class="sdesc">Ins Zielverzeichnis klonen.</div><pre><span class="cm">mkdir -p /opt/mp3z && cd /opt/mp3z</span>
-<span class="cm">git clone https://github.com/therealteacher/hAI.highfishMP3zPlayer.git .</span></pre></div></div>
+<span class="cm">git clone https://github.com/jbkunama1/hAI.highfishMP3zPlayer_V2.git .</span></pre></div></div>
 
       <div class="step reveal"><div class="snum">2</div><div class="sc"><div class="stitle">Dependencies</div><div class="sdesc">Alle Abhängigkeiten auf einmal.</div><pre><span class="cm">pip install -r requirements.txt --break-system-packages</span></pre></div></div>
 
@@ -266,7 +269,9 @@
 <span class="cc"># Anpassen:</span>
 <span class="cs">MUSIC_ROOT=/mnt/USBHDD_MP3z</span>
 <span class="cs">SMB_USER=daniel</span>
-<span class="cs">SMB_PASS=deinSambaPasswort</span></pre></div></div>
+<span class="cs">SMB_PASS=deinSambaPasswort</span>
+<span class="cs">API_KEY_OVERRIDE=</span><span class="cc">  # optional: eigener API-Key</span>
+<span class="cs">DEFAULT_URL=http://samba.arbeitermili.eu</span></pre></div></div>
 
       <div class="step reveal"><div class="snum">4</div><div class="sc"><div class="stitle">Icons generieren</div><div class="sdesc">Einmalig ausführen.</div><pre><span class="cm">python3 generate_icons.py</span>
 <span class="co">✓ icon-192.png</span>
@@ -282,8 +287,18 @@
       <div class="step reveal"><div class="snum">7</div><div class="sc"><div class="stitle">APK via PWABuilder</div><pre><span class="cs">https://pwabuilder.com</span>
 <span class="cc"># URL eingeben → Android → Download Package</span></pre></div></div>
 
-      <div class="step reveal"><div class="snum">8</div><div class="sc"><div class="stitle">Docker / Portainer (optional)</div><div class="sdesc">Statt systemd: Stack direkt aus dem Repo deployen — Image kommt automatisch aus GHCR.</div><pre><span class="cs">Portainer → Stacks → Add stack → Repository</span>
-<span class="cc"># Extern erreichbar auf Port 8066</span></pre></div></div>
+      <div class="step reveal"><div class="snum">8</div><div class="sc"><div class="stitle">Docker / Portainer (optional)</div><div class="sdesc">Statt systemd: Stack direkt aus dem Repo deployen — das Image baut GitHub Actions automatisch und pusht es zu GHCR.</div><pre><span class="cs">Portainer → Stacks → Add stack → Repository</span>
+<span class="cc"># Repo:  jbkunama1/hAI.highfishMP3zPlayer_V2</span>
+<span class="cc"># Pfad:  docker-compose.yml   (Referenz: main / vX.Y.Z)</span>
+<span class="cc"># Env:   SMB_USER · SMB_PASS · API_KEY_OVERRIDE · DEFAULT_URL</span>
+<span class="cc"># Netz:  highfishNetwork (vorher extern anlegen!)</span>
+<span class="cc"># Extern erreichbar auf Port 8066</span>
+docker pull ghcr.io/jbkunama1/hai.highfishmp3zplayer_v2:latest
+docker run -d --name mp3z -p 8066:80 --network highfishNetwork \
+  -v /mnt/USBHDD_MP3z:/music:ro \
+  -e SMB_USER=daniel -e SMB_PASS=deinSambaPasswort \
+  -e API_KEY_OVERRIDE=deinEigenerAPIKey \
+  ghcr.io/jbkunama1/hai.highfishmp3zplayer_v2:latest</pre></div></div>
     </div>
   </div>
 </section>
@@ -293,11 +308,17 @@
     <div class="sl">Entwickler-Docs</div>
     <h2 class="st reveal">REST API</h2>
     <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
-      <div class="card reveal"><div class="ft" style="font-family:'Syne Mono',monospace;color:var(--acc)">POST /api/verify</div><div class="fd" style="margin:8px 0">Login — prüft API-Key, gibt User zurück</div><pre style="font-size:11px"><span class="cc">{"apikey": "deinPasswort"}</span></pre></div>
+      <div class="card reveal"><div class="ft" style="font-family:'Syne Mono',monospace;color:var(--acc)">POST /api/verify</div><div class="fd" style="margin:8px 0">Login — prüft API-Key, gibt User zurück (kein Auth)</div><pre style="font-size:11px"><span class="cc">{"apikey": "deinPasswort"}</span></pre></div>
+      <div class="card reveal"><div class="ft" style="font-family:'Syne Mono',monospace;color:var(--acc)">GET /api/client-config</div><div class="fd" style="margin:8px 0">Öffentliche App-Konfiguration (kein Auth)</div><pre style="font-size:11px"><span class="cc">→ DEFAULT_URL, Titel, Version</span></pre></div>
       <div class="card reveal"><div class="ft" style="font-family:'Syne Mono',monospace;color:var(--acc)">GET /api/browse</div><div class="fd" style="margin:8px 0">Paginiertes Verzeichnis-Listing</div><pre style="font-size:11px"><span class="cc">?path=Artist/Album&offset=0&limit=80</span></pre></div>
-      <div class="card reveal"><div class="ft" style="font-family:'Syne Mono',monospace;color:var(--acc)">GET /api/search</div><div class="fd" style="margin:8px 0">Globale Suche über alle 60k Tracks</div><pre style="font-size:11px"><span class="cc">?q=dire+straits&offset=0&limit=100</span></pre></div>
-      <div class="card reveal"><div class="ft" style="font-family:'Syne Mono',monospace;color:var(--acc)">GET /api/stream</div><div class="fd" style="margin:8px 0">Audio-Streaming mit Range-Support</div><pre style="font-size:11px"><span class="cc">?path=Artist/song.mp3&apikey=...</span>
+      <div class="card reveal"><div class="ft" style="font-family:'Syne Mono',monospace;color:var(--acc)">GET /api/search</div><div class="fd" style="margin:8px 0">Globale Volltextsuche über alle 60k Tracks</div><pre style="font-size:11px"><span class="cc">?q=dire+straits&offset=0&limit=100</span></pre></div>
+      <div class="card reveal"><div class="ft" style="font-family:'Syne Mono',monospace;color:var(--acc)">GET /api/stream</div><div class="fd" style="margin:8px 0">Audio-Streaming mit Range-Support (Seek ohne Buffering)</div><pre style="font-size:11px"><span class="cc">?path=Artist/song.mp3&apikey=...</span>
 <span class="cc">Header: Range: bytes=0-</span></pre></div>
+      <div class="card reveal"><div class="ft" style="font-family:'Syne Mono',monospace;color:var(--acc)">GET /api/art</div><div class="fd" style="margin:8px 0">Album-Cover aus ID3-Tags oder cover.jpg</div><pre style="font-size:11px"><span class="cc">?path=Artist/Album&apikey=...</span>
+<span class="cc">Cache-Control: 86400</span></pre></div>
+      <div class="card reveal"><div class="ft" style="font-family:'Syne Mono',monospace;color:var(--acc)">GET /api/index-status</div><div class="fd" style="margin:8px 0">Index-Statistik</div><pre style="font-size:11px"><span class="cc">→ Anzahl Dateien, Build-Zeit</span></pre></div>
+      <div class="card reveal"><div class="ft" style="font-family:'Syne Mono',monospace;color:var(--acc)">Auth</div><div class="fd" style="margin:8px 0">Alle Endpoints außer verify/client-config brauchen den API-Key.</div><pre style="font-size:11px"><span class="cc">Header:    X-API-Key: deinPasswort</span>
+<span class="cc">URL-Param: ?apikey=... (stream/art)</span></pre></div>
     </div>
   </div>
 </section>
@@ -306,7 +327,7 @@
   <div class="flogo">hAI.MP3z</div>
   <div class="ftxt">Made with 🎵 + ☕ by <strong>TheRealTeacher</strong> / Highfish AI · MIT</div>
   <div class="flinks">
-    <a href="https://github.com/therealteacher/hAI.highfishMP3zPlayer">GitHub</a>
+    <a href="https://github.com/jbkunama1/hAI.highfishMP3zPlayer_V2">GitHub</a>
     <a href="https://highfishai.de">Highfish AI</a>
     <a href="https://pwabuilder.com">PWABuilder</a>
   </div>
