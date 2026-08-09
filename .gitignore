@@ -8,10 +8,6 @@ __pycache__/
 venv/
 .venv/
 
-# Icons werden lokal generiert
-icon-192.png
-icon-512.png
-
 # System
 .DS_Store
 Thumbs.db

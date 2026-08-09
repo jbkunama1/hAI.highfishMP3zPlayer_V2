@@ -1,0 +1,23 @@
+services:
+  mp3z:
+    image: ghcr.io/jbkunama1/hai.highfishmp3zplayer_v2:latest
+    container_name: mp3z
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    environment:
+      HOST: 0.0.0.0
+      PORT: "80"
+      MUSIC_ROOT: /music
+      SMB_USER: ${SMB_USER:-user}
+      SMB_PASS: ${SMB_PASS:-}
+      API_KEY_OVERRIDE: ${API_KEY_OVERRIDE:-}
+      DEFAULT_URL: ${DEFAULT_URL:-http://localhost}
+    volumes:
+      - /mnt/USBHDD_MP3z:/music:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1/api/ping')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s

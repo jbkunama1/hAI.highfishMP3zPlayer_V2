@@ -204,7 +204,40 @@ systemctl status mp3z
 
 ---
 
-### Schritt 7 — Domain einrichten
+### Schritt 7 — Docker / Portainer-Stack (alternativ zu systemd)
+
+Das Repo baut automatisch ein **Docker-Image** via GitHub Actions und pusht es zu **GHCR** (`ghcr.io/jbkunama1/hai.highfishmp3zplayer_v2`).
+
+**In Portainer deployen:**
+
+1. **Environments → dein Server → Stacks → Add stack**
+2. Name: `mp3z`
+3. **Repository** auswählen:
+   - Repository URL: `https://github.com/jbkunama1/hAI.highfishMP3zPlayer_V2`
+   - Referenz: `main` (oder ein `vX.Y.Z`-Tag)
+   - Compose-Pfad: `docker-compose.yml`
+4. **Environment-Variablen** setzen:
+   ```
+   SMB_USER=daniel
+   SMB_PASS=deinSambaPasswort
+   DEFAULT_URL=http://samba.arbeitermili.eu
+   ```
+5. **Deploy the stack**
+
+**Manuell via Docker:**
+```bash
+docker pull ghcr.io/jbkunama1/hai.highfishmp3zplayer_v2:latest
+docker run -d --name mp3z -p 80:80 \
+  -v /mnt/USBHDD_MP3z:/music:ro \
+  -e SMB_USER=daniel -e SMB_PASS=deinSambaPasswort \
+  ghcr.io/jbkunama1/hai.highfishmp3zplayer_v2:latest
+```
+
+> ⚠️ **Wichtig:** Die Musiksammlung muss als Volume gemountet sein (`/mnt/USBHDD_MP3z:/music:ro`). Das Image läuft als **Nicht-root-Benutzer** — bei gemounteten NTFS-Dateisystemen ggf. `user_uid`/`user_gid` am Mount setzen.
+
+---
+
+### Schritt 8 — Domain einrichten
 
 ```
 Fritzbox Port-Forwarding:

@@ -1,0 +1,15 @@
+.git
+.github
+.env
+__pycache__
+*.pyc
+*.pyo
+venv
+.venv
+systemd
+mp3z.service
+generate_icons.py
+.gitignore
+.DS_Store
+Thumbs.db
+*.log
