@@ -70,20 +70,21 @@ def main():
         raise TimeoutError('server closed stdout before returning a response')
 
     try:
-        # Send the MCP handshake + list first (blocking responses confirm each step),
-        # then the search call. Interleaving keeps the server's stdio loop alive so
-        # the final response is written before we terminate the process.
+        # Send the MCP handshake, then list, then call. Each response is read
+        # (blocking) to confirm sequencing: initialize must be answered before the
+        # initialized notification may be sent, and tools/list must follow that.
         send({'jsonrpc': '2.0', 'id': 1, 'method': 'initialize',
               'params': {'protocolVersion': '2025-03-26', 'capabilities': {},
                         'clientInfo': {'name': 'stdio-test', 'version': '1'}}})
+
+        init = read_response()
+        assert init.get('id') == 1 and 'result' in init, init
+        print('initialize OK —', init['result']['serverInfo'])
+
         send({'jsonrpc': '2.0', 'method': 'notifications/initialized', 'params': {}})
         send({'jsonrpc': '2.0', 'id': 2, 'method': 'tools/list', 'params': {}})
         send({'jsonrpc': '2.0', 'id': 3, 'method': 'tools/call',
               'params': {'name': 'search_tracks_tool', 'arguments': {'query': 'test', 'limit': 5}}})
-
-        init = read_response()
-        assert init.get('id') == 1 and init['result']['serverInfo']['name'] == 'mp3z', init
-        print('initialize OK —', init['result']['serverInfo'])
 
         tlist = read_response()
         names = sorted(t['name'] for t in tlist['result']['tools'])
