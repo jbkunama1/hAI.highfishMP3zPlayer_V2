@@ -4,8 +4,6 @@
 
 ```
 
-                               |___/
-        S A M B A   P L A Y E R   ·   H I G H F I S H   A I
 ```
 
 **Deine 60.000 Tracks. Zuhause gehostet. Überall verfügbar.**
