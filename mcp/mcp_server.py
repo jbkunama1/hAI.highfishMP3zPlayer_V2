@@ -41,7 +41,7 @@ MCP_SERVER_NAME = re.sub(r'[^a-z0-9_-]', '_', MCP_DISPLAY_NAME.lower())
 class Config:
     def __init__(self):
         self.base_url = os.getenv('MP3Z_BASE_URL', '').rstrip('/')
-        self.api_key = os.getenv('MP3Z_API_KEY', '')
+        self.api_key = os.getenv('MP3Z_API_KEY') or os.getenv('API_KEY_OVERRIDE') or os.getenv('SMB_PASS', '')
         self.music_root = os.getenv('MUSIC_ROOT', '')
         self.music_roots = self._parse_roots(os.getenv('MUSIC_ROOTS', ''))
         self.stream_base = os.getenv('MP3Z_STREAM_BASE', self.base_url).rstrip('/')
@@ -361,7 +361,7 @@ def build_server(port: int = 8000):
     from mcp.server.fastmcp import FastMCP
 
     server = FastMCP(name=MCP_SERVER_NAME,
-                     settings={'host': '0.0.0.0', 'port': port})
+                     host='0.0.0.0', port=port)
 
     @server.tool()
     def search_tracks_tool(query: str, limit: int = 20) -> dict:
@@ -454,7 +454,7 @@ def run_selftest(argv):
 
     global CONF
     CONF = Config()
-    if not CONF.list_roots():
+    if not CONF.http_mode and not CONF.list_roots():
         print('ERROR: no music root configured')
         return 1
 
