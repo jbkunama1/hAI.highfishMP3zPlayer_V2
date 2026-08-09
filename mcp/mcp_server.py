@@ -266,7 +266,31 @@ def search_tracks(query: str, limit: int = 20):
 
 def get_track_info(path: str):
     if CONF.http_mode:
-        return _http_get('/api/search', {'q': Path(path).stem, 'limit': 20})
+        data = _http_get('/api/search', {'q': Path(path).stem, 'limit': 20})
+        results = data.get('results', [])
+        match = None
+        for r in results:
+            if r.get('path') == path:
+                match = r
+                break
+        if not match:
+            raise ValueError(f'track not found: {path}')
+        rel_path = Path(path)
+        if rel_path.suffix.lower() not in {'.mp3', '.flac', '.ogg', '.m4a', '.wav', '.aac', '.opus', '.wma'}:
+            raise ValueError(f'not an audio file: {path}')
+        return {
+            'path': path,
+            'name': match.get('name', Path(path).name),
+            'size': None,
+            'format': rel_path.suffix.lower().lstrip('.'),
+            'duration': None,
+            'duration_sec': None,
+            'title': rel_path.stem,
+            'artist': None,
+            'album': None,
+            'source': match.get('source'),
+            'dir': match.get('dir'),
+        }
     p = safe_local_path(path)
     if not p.is_file():
         raise ValueError(f'not a file: {path}')
