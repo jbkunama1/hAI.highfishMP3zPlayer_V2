@@ -3,11 +3,7 @@
 [![Buy me a coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/highfish)
 
 ```
- _     _    ___    _       _       _       _      _     __   __  ____  ____  _____
-| |__ / \  |_ _|  | |__   (_) __ _| |__   / _|   | |  / /  / / |  _ \|___ \|_  /
-| '_ \/ _ \  | |  | '_ \  | |/ _` | '_ \ | |_    | | / /  / /  | |_) | __) |/ /
-| | | \___/ | |  | | | | | | (_| | | | | |  _|   | |/ /  / /  |  __/ / __// /_
-|_| |_\___||___|  |_| |_| |_|\__, |_| |_| |_|     |_/_/  /_/   |_|   |_____/____|
+
                                |___/
         S A M B A   P L A Y E R   ·   H I G H F I S H   A I
 ```
