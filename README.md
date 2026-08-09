@@ -222,6 +222,7 @@ Das Repo baut automatisch ein **Docker-Image** via GitHub Actions und pusht es z
    ```
    SMB_USER=daniel
    SMB_PASS=deinSambaPasswort
+   API_KEY_OVERRIDE=  # optional: eigener API-Key (sonst gilt SMB_PASS)
    DEFAULT_URL=http://samba.arbeitermili.eu
    ```
 5. **Deploy the stack**
@@ -234,6 +235,7 @@ docker pull ghcr.io/jbkunama1/hai.highfishmp3zplayer_v2:latest
 docker run -d --name mp3z -p 8066:80 \
   -v /mnt/USBHDD_MP3z:/music:ro \
   -e SMB_USER=daniel -e SMB_PASS=deinSambaPasswort \
+  -e API_KEY_OVERRIDE=deinEigenerAPIKey \
   ghcr.io/jbkunama1/hai.highfishmp3zplayer_v2:latest
 ```
 
