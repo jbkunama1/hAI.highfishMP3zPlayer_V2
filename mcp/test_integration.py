@@ -12,6 +12,7 @@ sample = (Path(__file__).parent / 'sample_music').resolve()
 def local_multiroot():
     os.environ['MUSIC_ROOT'] = ''
     os.environ['MUSIC_ROOTS'] = json.dumps({'usb': str(sample), 'nas': str(sample)})
+    os.environ.pop('MP3Z_BASE_URL', None)
     import mcp_server
     mcp_server.CONF = mcp_server.Config()
     assert set(mcp_server.CONF.list_roots()) == {'usb', 'nas'}, mcp_server.CONF.list_roots()
