@@ -126,6 +126,22 @@ def safe_local_path(path: str) -> Path:
 
 
 # ── metadata ───────────────────────────────────────────────────────────────────
+# Map format-specific Mutagen keys to canonical metadata fields.
+_TAG_KEYS = {
+    'TIT2': 'title', '©nam': 'title', '\xa9nam': 'title',
+    'TPE1': 'artist', '©ART': 'artist', '\xa9ART': 'artist',
+    'TALB': 'album', '©alb': 'album', '\xa9alb': 'album',
+}
+
+
+def _canonical_tags(tags: dict) -> dict:
+    out = {}
+    for k, v in tags.items():
+        key = _TAG_KEYS.get(k, k)
+        out[key] = v
+    return out
+
+
 def read_tags(path: Path):
     try:
         from mutagen.id3 import ID3
@@ -136,7 +152,8 @@ def read_tags(path: Path):
     try:
         suffix = path.suffix.lower()
         if suffix == '.mp3':
-            return {k: str(v) for k, v in ID3(path).items() if not k.startswith('APIC')}
+            return _canonical_tags(
+                {k: str(v) for k, v in ID3(path).items() if not k.startswith('APIC')})
         if suffix == '.flac':
             t = FLAC(path)
             tags = {}
@@ -145,8 +162,9 @@ def read_tags(path: Path):
             return tags
         if suffix in ('.m4a', '.mp4', '.aac'):
             t = MP4(path)
-            return {k: str(v[0]) if isinstance(v, list) and v else str(v)
-                    for k, v in t.tags.items() if k != 'covr'}
+            return _canonical_tags(
+                {k: str(v[0]) if isinstance(v, list) and v else str(v)
+                 for k, v in t.tags.items() if k != 'covr'})
     except Exception:
         return {}
     return {}
