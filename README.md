@@ -37,7 +37,7 @@
 | 📋 **Queue** | Einzelne Tracks oder ganzen Ordner — Fisher-Yates Shuffle |
 | 🔀 **Shuffle** | Zufällige Wiedergabe + Queue-Mischen per Knopfdruck |
 | 🔁 **Repeat** | Aus / Einen Titel / Gesamte Queue |
-| 🔐 **Login-Screen** | Passwortschutz mit Samba-Credentials als API-Key |
+| 🔐 **Login-Screen** | Passwortschutz (Samba-Passwort = API-Key) · keine URL-Eingabe nötig (App & API laufen auf demselben Server) |
 | 📱 **PWA + APK** | Service Worker, manifest.json, Lockscreen-Controls |
 | 🔒 **Sicherheit** | Timing-Attack-sichere Auth via `secrets.compare_digest` |
 | ⚡ **60k-ready** | Paginierung (80/Seite) + In-Memory-Index-Cache |

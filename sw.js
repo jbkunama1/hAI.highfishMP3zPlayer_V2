@@ -8,7 +8,7 @@
  */
 
 const CACHE_NAME    = 'mp3z-v1';
-const SHELL_CACHE   = 'mp3z-shell-v1';
+const SHELL_CACHE   = 'mp3z-shell-v2';
 const ART_CACHE     = 'mp3z-art-v1';
 
 const SHELL_ASSETS = [

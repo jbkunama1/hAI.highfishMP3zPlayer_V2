@@ -434,10 +434,6 @@
     <h2>🔐 Anmelden</h2>
     <p>Gib dein Samba-Passwort ein um auf deine Musiksammlung zuzugreifen.</p>
     <div class="field-wrap">
-      <label>Backend-URL</label>
-      <input id="l-url" type="url" placeholder="http://samba.arbeitermili.eu" autocomplete="off"/>
-    </div>
-    <div class="field-wrap">
       <label>Passwort</label>
       <div class="pw-wrap">
         <input id="l-pass" type="password" placeholder="••••••••" autocomplete="current-password"/>
@@ -506,12 +502,8 @@
   <div class="s-sheet">
     <h2>⚙ Einstellungen</h2>
     <div class="s-user-tag" id="s-user-tag">👤 —</div>
-    <div class="s-row">
-      <label>Backend-URL</label>
-      <input id="s-url" type="url"/>
-    </div>
-    <div class="s-row">
-      <label>Passwort ändern</label>
+        <div class="s-row">
+          <label>Passwort ändern</label>
       <div class="pw-wrap">
         <input id="s-pass" type="password" placeholder="(leer lassen um beizubehalten)"/>
         <button class="pw-toggle" data-target="s-pass" type="button">👁</button>
@@ -543,7 +535,8 @@ const esc     = s => String(s)
 const $       = id => document.getElementById(id);
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
-let baseUrl      = localStorage.getItem('mp3z_url')    || 'http://samba.arbeitermili.eu';
+// Backend = same origin (PWA & API auf demselben Server). Kein URL-Feld mehr nötig.
+let baseUrl      = window.location.origin;
 let apiKey       = localStorage.getItem('mp3z_apikey') || '';
 let loggedUser   = localStorage.getItem('mp3z_user')   || '';
 let currentPath  = '';
@@ -557,7 +550,6 @@ let searchTimer, artObserver;
 
 // ── DOM-REFERENZEN ────────────────────────────────────────────────────────────
 const loginScreen  = $('login-screen');
-const lUrl         = $('l-url');
 const lPass        = $('l-pass');
 const btnLogin     = $('btn-login');
 const loginError   = $('login-error');
@@ -620,14 +612,12 @@ document.querySelectorAll('.pw-toggle').forEach(btn => {
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
 function showLogin(msg) {
-  lUrl.value = baseUrl;
   lPass.value = '';
   if (msg) loginError.textContent = msg;
   loginScreen.classList.remove('gone', 'hiding');
 }
 
 async function doLogin() {
-  const url  = lUrl.value.trim().replace(/\/+$/, '') || baseUrl;
   const pass = lPass.value;
   if (!pass) { loginError.textContent = '⚠ Bitte Passwort eingeben'; return; }
 
@@ -636,7 +626,7 @@ async function doLogin() {
   loginError.textContent = '';
 
   try {
-    const res  = await fetch(`${url}/api/verify`, {
+    const res  = await fetch(`${baseUrl}/api/verify`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ apikey: pass }),
@@ -644,10 +634,8 @@ async function doLogin() {
     const data = await res.json();
 
     if (res.ok && data.ok) {
-      baseUrl    = url;
       apiKey     = pass;
       loggedUser = data.user || 'user';
-      localStorage.setItem('mp3z_url',    baseUrl);
       localStorage.setItem('mp3z_apikey', apiKey);
       localStorage.setItem('mp3z_user',   loggedUser);
       enterApp();
@@ -657,7 +645,7 @@ async function doLogin() {
       setTimeout(() => lPass.classList.remove('err'), 400);
     }
   } catch {
-    loginError.textContent = '⚠ Server nicht erreichbar — URL prüfen';
+    loginError.textContent = '⚠ Server nicht erreichbar';
   }
 
   btnLogin.disabled    = false;
@@ -680,7 +668,6 @@ function logout() {
 
 btnLogin.addEventListener('click', doLogin);
 lPass.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-lUrl.addEventListener('keydown',  e => { if (e.key === 'Enter') lPass.focus(); });
 
 // AUTO-LOGIN: gespeicherten Key gegen auth. Endpoint prüfen (FIX UX 4)
 if (apiKey) {
@@ -693,11 +680,6 @@ if (apiKey) {
       if (err.message !== '401') enterApp();
     });
 } else {
-  // Vorausfüllen der URL vom Server
-  fetch(`${baseUrl}/api/client-config`)
-    .then(r => r.json())
-    .then(d => { if (d.default_url) lUrl.value = d.default_url; })
-    .catch(() => {});
   showLogin('');
 }
 
@@ -1206,7 +1188,6 @@ $('prog-wrap').addEventListener('click', e => {
 
 // ── EINSTELLUNGEN ─────────────────────────────────────────────────────────────
 $('btn-settings').addEventListener('click', async () => {
-  $('s-url').value       = baseUrl;
   $('s-pass').value      = '';
   $('s-user-tag').textContent = `👤 ${loggedUser || '?'}`;
   $('s-index-info').textContent = '';
@@ -1225,11 +1206,8 @@ settingsMod.addEventListener('click', e => {
 });
 
 $('btn-save-s').addEventListener('click', () => {
-  const newUrl  = $('s-url').value.trim().replace(/\/+$/, '') || baseUrl;
   const newPass = $('s-pass').value;
-  baseUrl = newUrl;
   if (newPass) { apiKey = newPass; localStorage.setItem('mp3z_apikey', apiKey); }
-  localStorage.setItem('mp3z_url', baseUrl);
   settingsMod.classList.remove('open');
   loadDir('');
   showToast('Gespeichert ✓');
