@@ -36,6 +36,8 @@ pip install -r requirements.txt
 
 Im lokalen Modus bekommen Pfade ein Quellen-Präfix: `usb/Album/01 Titel.mp3`, `nas/Playlist …`. `default` ist die `MUSIC_ROOT`-Wurzel und erscheint **ohne** Präfix.
 
+`get_browse('')` ohne `default`-Wurzel (nur `MUSIC_ROOTS`) listet die konfigurierten Roots als Verzeichnis-Einträge, damit Clients `usb`, `nas`, … entdecken können.
+
 ## Start
 
 ```bash

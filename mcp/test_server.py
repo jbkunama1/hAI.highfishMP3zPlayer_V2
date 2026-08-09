@@ -66,6 +66,11 @@ def test_tools():
         assert any(h['path'].startswith('usb/') for h in r['results']), r
         print('multi-root search OK')
 
+        # Multi-root browse root: empty path lists configured root labels.
+        r = mcp_server.get_browse('')
+        assert any(e['name'] == 'usb' and e['path'] == 'usb' for e in r['entries']), r
+        print('multi-root browse root OK')
+
     print('ALL TOOL TESTS PASSED')
 
 

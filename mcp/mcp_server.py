@@ -326,11 +326,20 @@ def get_browse(path: str = ''):
                      'path': e.get('path'), 'size': e.get('size')}
                     for e in data.get('entries', [])],
                 'total': data.get('total', 0)}
+    roots = CONF.list_roots()
+    if path in ('', '.') and 'default' not in roots:
+        # Empty path with only named roots: list them so clients can discover
+        # usb, nas, etc. before browsing inside a specific root.
+        entries = []
+        for label in sorted(roots):
+            entries.append({'type': 'dir', 'name': label,
+                            'path': label, 'size': None})
+        return {'path': path, 'entries': entries, 'total': len(entries)}
     p = safe_local_path(path)
     if not p.is_dir():
         raise ValueError(f'not a directory: {path}')
     root_label, _ = _split(path)
-    base = Path(CONF.list_roots()[root_label]).resolve()
+    base = Path(roots[root_label]).resolve()
     entries = []
     for item in sorted(p.iterdir(), key=lambda i: (i.is_file(), i.name.lower())):
         if item.name.startswith('.'):
