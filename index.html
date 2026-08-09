@@ -241,7 +241,7 @@
       <div class="card reveal"><span class="fi">🖼</span><div class="ft">Album-Cover</div><div class="fd">ID3-Tags (MP3/FLAC/M4A) oder cover.jpg. 24h Browser-Cache.</div></div>
       <div class="card reveal"><span class="fi">📱</span><div class="ft">PWA + APK</div><div class="fd">Service Worker, manifest.json. PWABuilder → echte Android APK in Minuten.</div></div>
       <div class="card reveal"><span class="fi">📋</span><div class="ft">Queue</div><div class="fd">Einzelne Tracks oder ganzen Ordner (paginiert). Queue mischen, leeren, verwalten.</div></div>
-      <div class="card reveal"><span class="fi">🏠</span><div class="ft">100% Self-hosted</div><div class="fd">Eine Python-Datei. Kein Docker. Läuft auf DietPi/Debian mit systemd-Autostart.</div></div>
+      <div class="card reveal"><span class="fi">🏠</span><div class="ft">100% Self-hosted</div><div class="fd">Eine Python-Datei. Läuft auf DietPi/Debian mit systemd-Autostart oder als Docker/Portainer-Stack (GHCR, Port 8066).</div></div>
     </div>
   </div>
 </section>
@@ -254,7 +254,7 @@
       <div class="badge"><div class="bd"></div>Python 3.9+</div>
       <div class="badge"><div class="bd"></div>DietPi / Debian 11</div>
       <div class="badge"><div class="bd" style="background:var(--acc2)"></div>flask · flask-cors · mutagen · python-dotenv · pillow</div>
-      <div class="badge"><div class="bd" style="background:#7ec8e3"></div>Port 80 oder 8080</div>
+      <div class="badge"><div class="bd" style="background:#7ec8e3"></div>Port 80 / Docker 8066</div>
     </div>
     <div class="steps">
       <div class="step reveal"><div class="snum">1</div><div class="sc"><div class="stitle">Repo klonen</div><div class="sdesc">Ins Zielverzeichnis klonen.</div><pre><span class="cm">mkdir -p /opt/mp3z && cd /opt/mp3z</span>
@@ -281,6 +281,9 @@
 
       <div class="step reveal"><div class="snum">7</div><div class="sc"><div class="stitle">APK via PWABuilder</div><pre><span class="cs">https://pwabuilder.com</span>
 <span class="cc"># URL eingeben → Android → Download Package</span></pre></div></div>
+
+      <div class="step reveal"><div class="snum">8</div><div class="sc"><div class="stitle">Docker / Portainer (optional)</div><div class="sdesc">Statt systemd: Stack direkt aus dem Repo deployen — Image kommt automatisch aus GHCR.</div><pre><span class="cs">Portainer → Stacks → Add stack → Repository</span>
+<span class="cc"># Extern erreichbar auf Port 8066</span></pre></div></div>
     </div>
   </div>
 </section>
