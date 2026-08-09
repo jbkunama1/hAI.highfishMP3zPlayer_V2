@@ -14,6 +14,7 @@ def test_tools():
     os.environ['MUSIC_ROOT'] = str((HERE / 'sample_music').resolve())
     os.environ.pop('MUSIC_ROOTS', None)
     os.environ.pop('MP3Z_BASE_URL', None)
+    os.environ['MP3Z_STREAM_BASE'] = 'http://localhost'
 
     import mcp_server
 

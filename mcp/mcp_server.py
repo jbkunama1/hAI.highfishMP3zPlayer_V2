@@ -440,6 +440,7 @@ def run_selftest(argv):
     else:
         root = Path(args.music_root).resolve()
         os.environ['MUSIC_ROOT'] = str(root)
+        os.environ.setdefault('MP3Z_STREAM_BASE', 'http://localhost')
         _selftest_music_root(root, 'MCP Test Song')
 
     global CONF

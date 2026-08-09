@@ -60,7 +60,8 @@ Claude Desktop — `claude_desktop_config.json`:
       "args": ["/pfad/zu/mcp/mcp_server.py"],
       "env": {
         "MUSIC_ROOT": "/mnt/USBHDD_MP3z",
-        "MP3Z_API_KEY": "dein-api-key"
+        "MP3Z_API_KEY": "dein-api-key",
+        "MP3Z_STREAM_BASE": "http://mp3z:8066"
       }
     }
   }
