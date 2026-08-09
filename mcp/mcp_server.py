@@ -230,6 +230,11 @@ def search_tracks(query: str, limit: int = 20):
     q = (query or '').strip().lower()
     if not q or len(q) < 2:
         return {'query': query or '', 'results': [], 'total': 0}
+    # Normalize limit: reject negative/invalid, clamp to max 500
+    try:
+        limit = max(0, min(int(limit), 500))
+    except (ValueError, TypeError):
+        limit = 20
     if CONF.http_mode:
         data = _http_get('/api/search', {'q': q, 'limit': min(int(limit), 500)})
         return {'query': data.get('query', q), 'total': data.get('total', 0),
