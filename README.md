@@ -2,9 +2,7 @@
 
 [![Buy me a coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/highfish)
 
-```
 
-```
 
 **Deine 60.000 Tracks. Zuhause gehostet. Überall verfügbar.**
 
