@@ -24,7 +24,24 @@ from flask_cors import CORS
 load_dotenv(Path(__file__).parent / '.env')
 
 # ── KONFIGURATION (aus .env) ──────────────────────────────────────────────────
-MUSIC_ROOT  = Path(os.getenv('MUSIC_ROOT',  '/mnt/USBHDD_MP3z'))
+# Musikquellen: MUSIC_ROOTS als JSON-Objekt {name: pfad} — rückwärtskompatibel
+# mit MUSIC_ROOT (wird als Quelle "music" geführt). Names sind "slugified".
+def _slug(name: str) -> str:
+    return re.sub(r'[^a-z0-9_-]+', '-', name.lower()).strip('-') or 'music'
+
+_roots_env = os.getenv('MUSIC_ROOTS')
+if _roots_env:
+    try:
+        _parsed = json.loads(_roots_env)
+        _parsed = {_slug(k): Path(v).expanduser() for k, v in _parsed.items() if v}
+        MUSIC_ROOTS = _parsed or {_slug(os.getenv('MUSIC_ROOT', 'music')): Path(os.getenv('MUSIC_ROOT', '/mnt/USBHDD_MP3z')).expanduser()}
+    except json.JSONDecodeError:
+        print('⚠  MUSIC_ROOTS ist kein gültiges JSON — falle auf MUSIC_ROOT zurück.')
+        MUSIC_ROOTS = {}
+else:
+    MUSIC_ROOTS = {}
+if not MUSIC_ROOTS:
+    MUSIC_ROOTS = {'music': Path(os.getenv('MUSIC_ROOT', '/mnt/USBHDD_MP3z')).expanduser()}
 HOST        = os.getenv('HOST',             '0.0.0.0')
 PORT        = int(os.getenv('PORT',         '80'))
 SMB_USER    = os.getenv('SMB_USER',         'user')
@@ -96,10 +113,32 @@ def client_config():
     })
 
 # ── SICHERHEIT ────────────────────────────────────────────────────────────────
-def safe_path(rel: str) -> Path:
-    rel  = rel.lstrip('/').lstrip('\\')
-    full = (MUSIC_ROOT / rel).resolve()
-    if not str(full).startswith(str(MUSIC_ROOT.resolve())):
+def split_source(rel: str):
+    """Trennt Quellen-Präfix vom quellenrelativen Pfad → (root, rel_part).
+    Leerer Pfad ('') = Quellen-Übersicht bzw. Wurzel der Default-Quelle."""
+    rel  = (rel or '').replace('\\', '/').lstrip('/')
+    if not rel:
+        return None, ''
+    first, _, rest = rel.partition('/')
+    if first in MUSIC_ROOTS:
+        return MUSIC_ROOTS[first], rest
+    return None, rel
+
+def _resolve_fallback(rel: str):
+    """Einzelner Root: akzeptiert zusätzlich Pfade ohne Quellen-Präfix."""
+    src, r = split_source(rel)
+    if src is None and len(MUSIC_ROOTS) == 1:
+        return next(iter(MUSIC_ROOTS.values())), r
+    return src, r
+
+def resolve_source(rel: str) -> Path:
+    """Löst einen Pfad gegen seine Quelle auf — 403 bei unbekannter Quelle
+    oder Directory-Traversal außerhalb der Quelle."""
+    src, r = _resolve_fallback(rel)
+    if src is None:
+        abort(403)
+    full = (src / r).resolve()
+    if not str(full).startswith(str(src.resolve()) + os.sep) and full != src.resolve():
         abort(403)
     return full
 
@@ -119,22 +158,23 @@ class FileIndex:
 
     def _build(self):
         self._building = True
-        print('🔍 Baue Datei-Index …', flush=True)
+        print('🔍 Baue Datei-Index über {} Quelle(n) …'.format(len(MUSIC_ROOTS)), flush=True)
         t0, result = time.time(), []
-        root = MUSIC_ROOT.resolve()
-        try:
-            for dirpath, dirnames, filenames in os.walk(root):
-                dirnames[:] = [d for d in dirnames if not d.startswith('.')]
-                dp      = Path(dirpath)
-                rel_dir = str(dp.relative_to(root))
-                if rel_dir == '.': rel_dir = ''
-                for fn in filenames:
-                    if fn.startswith('.'): continue
-                    if Path(fn).suffix.lower() not in AUDIO_EXTS: continue
-                    rel_path = (rel_dir + '/' + fn).lstrip('/')
-                    result.append({'name': fn, 'path': rel_path, 'dir': rel_dir or '/'})
-        except Exception as e:
-            print(f'⚠ Index-Fehler: {e}', flush=True)
+        for src_name, root in MUSIC_ROOTS.items():
+            root = root.resolve()
+            try:
+                for dirpath, dirnames, filenames in os.walk(root):
+                    dirnames[:] = [d for d in dirnames if not d.startswith('.')]
+                    rel_dir = str(Path(dirpath).relative_to(root))
+                    if rel_dir == '.': rel_dir = ''
+                    for fn in filenames:
+                        if fn.startswith('.'): continue
+                        if Path(fn).suffix.lower() not in AUDIO_EXTS: continue
+                        rel_path = src_name + '/' + (rel_dir + '/' if rel_dir else '') + fn
+                        result.append({'name': fn, 'path': rel_path,
+                                       'dir': (src_name + '/' + rel_dir) if rel_dir else src_name})
+            except Exception as e:
+                print(f'⚠ Index-Fehler ({src_name}): {e}', flush=True)
         with self._lock:
             self._entries = result
         self._built    = time.time()
@@ -150,23 +190,34 @@ def browse():
     rel    = request.args.get('path', '')
     offset = int(request.args.get('offset', 0))
     limit  = min(int(request.args.get('limit', PAGE_SIZE)), 500)
-    path   = safe_path(rel)
+    src, r = _resolve_fallback(rel)
+    # Keine Quelle und kein Pfad → Quellen-Übersicht (nur bei >1 Quelle)
+    if src is None and not r:
+        entries = [{'type': 'dir', 'name': k, 'path': k} for k in MUSIC_ROOTS]
+        total = len(entries)
+        page  = entries[offset:offset+limit]
+        return jsonify({'path': '', 'entries': page, 'offset': offset,
+                        'limit': limit, 'total': total, 'has_more': (offset+limit) < total})
+    path = resolve_source(rel)
     if not path.is_dir():
         return jsonify({'error': 'Kein Verzeichnis'}), 404
     try:
         items = sorted(path.iterdir(), key=lambda p: (p.is_file(), p.name.lower()))
     except PermissionError:
         return jsonify({'error': 'Kein Zugriff'}), 403
+    source_prefix = [k for k, v in MUSIC_ROOTS.items() if v == src]
+    prefix = source_prefix[0] if source_prefix else ''
+
     entries = []
     for item in items:
         if item.name.startswith('.'): continue
         sx = item.suffix.lower()
+        rel_item = str(item.relative_to(src)).replace('\\', '/')
+        base_path = f"{prefix}/{rel_item}" if prefix else rel_item
         if item.is_dir():
-            entries.append({'type': 'dir', 'name': item.name,
-                            'path': str(item.relative_to(MUSIC_ROOT))})
+            entries.append({'type': 'dir', 'name': item.name, 'path': base_path})
         elif item.is_file() and sx in (AUDIO_EXTS | IMG_EXTS):
-            entries.append({'type': 'file', 'name': item.name,
-                            'path': str(item.relative_to(MUSIC_ROOT)),
+            entries.append({'type': 'file', 'name': item.name, 'path': base_path,
                             'size': item.stat().st_size})
     total = len(entries)
     page  = entries[offset:offset+limit]
@@ -201,7 +252,7 @@ def search():
 @require_auth
 def stream():
     rel  = request.args.get('path', '')
-    path = safe_path(rel)
+    path = resolve_source(rel)
     if not path.is_file() or path.suffix.lower() not in AUDIO_EXTS:
         abort(404)
     file_size = path.stat().st_size
@@ -238,7 +289,7 @@ def stream():
 @require_auth
 def art():
     rel    = request.args.get('path', '')
-    path   = safe_path(rel)
+    path   = resolve_source(rel)
     suffix = path.suffix.lower()
     art_data, art_mime = None, 'image/jpeg'
     if MUTAGEN_OK:
@@ -273,10 +324,12 @@ def art():
 @require_auth
 def index_status():
     entries = index.get()
+    roots = {k: str(v) for k, v in MUSIC_ROOTS.items()}
     return jsonify({'total_files': len(entries),
                     'built_ago':   round(time.time() - index._built),
                     'building':    index._building,
-                    'music_root':  str(MUSIC_ROOT)})
+                    'music_root':  next(iter(roots.values()), None),
+                    'music_roots': roots})
 
 # ── STATIC FILES ──────────────────────────────────────────────────────────────
 HERE = Path(__file__).parent
@@ -372,13 +425,17 @@ if __name__ == '__main__':
     print('━' * 50)
     print(' 🎵 hAI.highfishMP3zPlayer  v2.0.0')
     print('━' * 50)
-    print(f'  User      : {SMB_USER}')
-    print(f'  MusicRoot : {MUSIC_ROOT}')
-    print(f'  URL       : http://{HOST}:{PORT}')
-    print(f'  API-Key   : {"✓ gesetzt" if API_KEY else "⚠ NICHT GESETZT!"}')
+    print(f'  User         : {SMB_USER}')
+    print(f'  Music-Roots  : {len(MUSIC_ROOTS)} Quelle(n)')
+    for n, p in MUSIC_ROOTS.items():
+        mark = ' ✓' if p.exists() else ' ⚠ fehlt'
+        print(f'    {n}: {p}{mark}')
+    print(f'  URL          : http://{HOST}:{PORT}')
+    print(f'  API-Key      : {"✓ gesetzt" if API_KEY else "⚠ NICHT GESETZT!"}')
     print('━' * 50)
-    if not MUSIC_ROOT.exists():
-        print(f'⚠  MUSIC_ROOT nicht gefunden: {MUSIC_ROOT}')
+    for n, p in MUSIC_ROOTS.items():
+        if not p.exists():
+            print(f'⚠  Quelle "{n}" nicht gefunden: {p}')
     threading.Thread(target=index._build, daemon=True).start()
     app.run(host=HOST, port=PORT, threaded=True)
 
