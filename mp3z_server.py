@@ -13,7 +13,7 @@ Start:
   python3 mp3z_server.py
 """
 
-import os, re, json, time, mimetypes, threading, secrets, hashlib
+import os, re, json, time, sys, atexit, socket, subprocess, mimetypes, threading, secrets, hashlib
 from pathlib import Path
 from functools import wraps
 from dotenv import load_dotenv
@@ -31,6 +31,13 @@ SMB_USER    = os.getenv('SMB_USER',         'user')
 SMB_PASS    = os.getenv('SMB_PASS',         '')
 API_KEY     = os.getenv('API_KEY_OVERRIDE') or SMB_PASS
 DEFAULT_URL = os.getenv('DEFAULT_URL',      'http://localhost')
+
+# ── MCP-Integration ──────────────────────────────────────────────────────────
+MCP_ENABLED    = os.getenv('MCP_ENABLED', '1') != '0'
+MCP_HOST       = os.getenv('MCP_HOST', '0.0.0.0')
+MCP_PORT       = int(os.getenv('MCP_PORT', '8080'))
+MCP_AUTOSTART  = os.getenv('MCP_AUTOSTART', '1') != '0'
+MCP_LOG        = Path(os.getenv('MCP_LOG', str(Path(__file__).parent / 'mcp_server.log')))
 
 if not API_KEY:
     print('⚠  Kein Passwort gesetzt! Bitte .env konfigurieren.')
@@ -142,6 +149,114 @@ class FileIndex:
         print(f'✓ Index: {len(result)} Dateien in {time.time()-t0:.1f}s', flush=True)
 
 index = FileIndex()
+
+# ── MCP-SERVER STEUERUNG ─────────────────────────────────────────────────────
+class MCPManager:
+    """Startet/stoppt den separaten MCP-Server (mcp/mcp_server.py) als Subprozess."""
+
+    def __init__(self, python=None):
+        self._lock = threading.Lock()
+        self._proc = None
+        self._log = None
+        self._started_at = None
+        self._python = python or sys.executable
+        self._script = Path(__file__).parent / 'mcp' / 'mcp_server.py'
+
+    @property
+    def script_exists(self):
+        return self._script.exists()
+
+    @staticmethod
+    def _port_open(host: str, port: int) -> bool:
+        """Prüft, ob auf host:port bereits etwas lauscht (Timeout 1s)."""
+        host = host if host not in ('0.0.0.0', '::') else '127.0.0.1'
+        try:
+            with socket.create_connection((host, port), timeout=1):
+                return True
+        except OSError:
+            return False
+
+    def status(self) -> dict:
+        with self._lock:
+            proc = self._proc
+            running = proc is not None and proc.poll() is None
+            if proc is not None and not running:
+                if self._log is not None:
+                    self._log.close()
+                self._proc, self._log, self._started_at = None, None, None
+            reachable = self._port_open(MCP_HOST, MCP_PORT) if running else False
+            return {
+                'enabled':       MCP_ENABLED,
+                'running':       running,
+                'reachable':     reachable,
+                'pid':           proc.pid if running else None,
+                'started_at':    self._started_at,
+                'port':          MCP_PORT,
+                'host':          MCP_HOST,
+                'autostart':     MCP_AUTOSTART,
+                'script':        str(self._script),
+                'script_exists': self.script_exists,
+                'url':           f'http://{MCP_HOST}:{MCP_PORT}/mcp' if running else None,
+            }
+
+    def start(self) -> dict:
+        if not self.script_exists:
+            return {'ok': False, 'error': 'mcp/mcp_server.py fehlt'}
+        with self._lock:
+            if self._proc is not None and self._proc.poll() is None:
+                return {'ok': True, **self.status()}
+            env = dict(os.environ)
+            env.setdefault('MCP_PORT', str(MCP_PORT))
+            env.setdefault('MUSIC_ROOT', str(MUSIC_ROOT))
+            # Stream-URLs zeigen auf diesen MP3z-Server, falls kein MP3Z_BASE_URL gesetzt.
+            env.setdefault('MP3Z_STREAM_BASE', f'http://{HOST}:{PORT}')
+            if API_KEY:
+                env.setdefault('MP3Z_API_KEY', API_KEY)
+            try:
+                log = open(MCP_LOG, 'ab')
+                self._proc = subprocess.Popen(
+                    [self._python, str(self._script), '--http', '--port', str(MCP_PORT)],
+                    env=env, stdout=log, stderr=subprocess.STDOUT,
+                    cwd=str(self._script.parent),
+                )
+                self._log = log
+            except OSError as e:
+                return {'ok': False, 'error': str(e)}
+            self._started_at = time.time()
+            return {'ok': True, **self.status()}
+
+    def stop(self) -> dict:
+        with self._lock:
+            proc = self._proc
+            log = self._log
+            self._proc, self._log, self._started_at = None, None, None
+        if proc is None or proc.poll() is not None:
+            if log is not None:
+                log.close()
+            return {'ok': True, **self.status()}
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
+        if log is not None:
+            log.close()
+        return {'ok': True, **self.status()}
+
+    def restart(self) -> dict:
+        self.stop()
+        return self.start()
+
+
+if MCP_ENABLED:
+    mcp_mgr = MCPManager()
+    atexit.register(mcp_mgr.stop)
+    if MCP_AUTOSTART:
+        threading.Thread(target=lambda: (time.sleep(1), mcp_mgr.start()),
+                         daemon=True).start()
+else:
+    mcp_mgr = None
 
 # ── API: BROWSE ───────────────────────────────────────────────────────────────
 @app.route('/api/browse')
@@ -277,6 +392,39 @@ def index_status():
                     'built_ago':   round(time.time() - index._built),
                     'building':    index._building,
                     'music_root':  str(MUSIC_ROOT)})
+
+# ── API: MCP-SERVER STEUERUNG ─────────────────────────────────────────────────
+def _mcp_status():
+    if mcp_mgr is None:
+        return {'enabled': False, 'running': False, 'reachable': False,
+                'error': 'MCP_ENABLED=0 (siehe .env)'}
+    return mcp_mgr.status()
+
+@app.route('/api/mcp/status')
+@require_auth
+def mcp_status():
+    return jsonify(_mcp_status())
+
+@app.route('/api/mcp/start', methods=['POST'])
+@require_auth
+def mcp_start():
+    if mcp_mgr is None:
+        return jsonify({'ok': False, 'error': 'MCP_ENABLED=0 (siehe .env)'}), 409
+    return jsonify(mcp_mgr.start())
+
+@app.route('/api/mcp/stop', methods=['POST'])
+@require_auth
+def mcp_stop():
+    if mcp_mgr is None:
+        return jsonify({'ok': False, 'error': 'MCP_ENABLED=0 (siehe .env)'}), 409
+    return jsonify(mcp_mgr.stop())
+
+@app.route('/api/mcp/restart', methods=['POST'])
+@require_auth
+def mcp_restart():
+    if mcp_mgr is None:
+        return jsonify({'ok': False, 'error': 'MCP_ENABLED=0 (siehe .env)'}), 409
+    return jsonify(mcp_mgr.restart())
 
 # ── STATIC FILES ──────────────────────────────────────────────────────────────
 HERE = Path(__file__).parent

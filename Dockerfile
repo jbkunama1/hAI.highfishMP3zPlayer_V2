@@ -8,7 +8,8 @@ WORKDIR /app
 
 # Abhängigkeiten zuerst (Layer-Caching: nur bei requirements-Änderung neu)
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY mcp/requirements.txt mcp-requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt -r mcp-requirements.txt
 
 COPY . .
 
@@ -16,7 +17,7 @@ COPY . .
 RUN useradd --create-home --shell /usr/sbin/nologin mp3z
 USER mp3z
 
-EXPOSE 80
+EXPOSE 80 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD python -c "import urllib.request;urllib.request.urlopen('http://127.0.0.1:80/api/ping')" || exit 1

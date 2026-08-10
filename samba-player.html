@@ -393,6 +393,43 @@
       margin-top:10px; text-align:center;
     }
 
+    /* ── SETTINGS: MCP-SERVER ────────────────────────────── */
+    .mcp-card {
+      margin-top:16px; padding:12px; background:var(--card);
+      border:1px solid var(--border); border-radius:12px;
+    }
+    .mcp-card h3 {
+      font-size:11px; font-family:'Syne Mono',monospace;
+      letter-spacing:1px; text-transform:uppercase;
+      color:var(--muted); margin-bottom:8px;
+    }
+    .mcp-line {
+      display:flex; align-items:center; justify-content:space-between;
+      gap:8px; font-size:11px; font-family:'Syne Mono',monospace;
+      color:var(--text); margin-bottom:6px;
+    }
+    .mcp-dot {
+      width:8px; height:8px; border-radius:50%; background:#555;
+      display:inline-block; margin-right:6px;
+    }
+    .mcp-dot.on  { background:#2ecc71; box-shadow:0 0 6px #2ecc7188; }
+    .mcp-dot.warn{ background:#f1c40f; box-shadow:0 0 6px #f1c40f88; }
+    .mcp-dot.off { background:#e74c3c; box-shadow:0 0 6px #e74c3c88; }
+    .mcp-btns { display:flex; gap:8px; margin-top:10px; }
+    .mcp-btn {
+      flex:1; padding:8px 6px; border:1px solid var(--border);
+      border-radius:8px; background:var(--surf); color:var(--text);
+      font-family:'Syne',sans-serif; font-weight:700; font-size:12px;
+      cursor:pointer; transition:all .15s;
+    }
+    .mcp-btn:hover:not(:disabled) { border-color:var(--acc); color:var(--acc); }
+    .mcp-btn:disabled { opacity:.4; cursor:default; }
+    .mcp-btn.danger:hover:not(:disabled) { border-color:#e74c3c; color:#e74c3c; }
+    .mcp-hint {
+      margin-top:8px; font-size:10px; font-family:'Syne Mono',monospace;
+      color:var(--muted); word-break:break-all; text-align:center;
+    }
+
     /* ── MISC ──────────────────────────────────────────────── */
     .spinner {
       display:flex; align-items:center; justify-content:center;
@@ -522,6 +559,19 @@
       <button class="btn-logout" id="btn-logout">Abmelden</button>
     </div>
     <div class="s-info" id="s-index-info"></div>
+    <div class="mcp-card">
+      <h3>MCP-Server</h3>
+      <div class="mcp-line">
+        <span><span class="mcp-dot" id="mcp-dot"></span><span id="mcp-state">…</span></span>
+        <span id="mcp-meta"></span>
+      </div>
+      <div class="mcp-btns">
+        <button class="mcp-btn" id="btn-mcp-start">▶ Start</button>
+        <button class="mcp-btn" id="btn-mcp-stop" >■ Stop</button>
+        <button class="mcp-btn" id="btn-mcp-restart">↻ Neustart</button>
+      </div>
+      <div class="mcp-hint" id="mcp-hint"></div>
+    </div>
   </div>
 </div>
 
@@ -580,6 +630,10 @@ const queueDrawer  = $('queue-drawer');
 const queueListEl  = $('queue-list');
 const settingsMod  = $('settings-modal');
 const toast        = $('toast');
+const mcpDot       = $('mcp-dot');
+const mcpState     = $('mcp-state');
+const mcpMeta      = $('mcp-meta');
+const mcpHint      = $('mcp-hint');
 
 // ── HILFSFUNKTIONEN ───────────────────────────────────────────────────────────
 function showToast(msg) {
@@ -1217,8 +1271,68 @@ $('btn-settings').addEventListener('click', async () => {
     $('s-index-info').textContent =
       `📦 ${s.total_files.toLocaleString()} Dateien · vor ${Math.round(s.built_ago / 60)} Min${buildStr}`;
   } catch { /* ignorieren */ }
+  loadMcpStatus();
   settingsMod.classList.add('open');
 });
+
+// ── MCP-SERVER STATUS ─────────────────────────────────────────────────────────
+async function loadMcpStatus() {
+  try {
+    const s = await apiFetch('/api/mcp/status');
+    if (!s.enabled) {
+      mcpDot.className = 'mcp-dot off';
+      mcpState.textContent = 'Deaktiviert';
+      mcpMeta.textContent = 'MCP_ENABLED=0';
+      mcpHint.textContent = 'Setze MCP_ENABLED=1 in .env';
+      setMcpBtns(false, true, true, true);
+      return;
+    }
+    if (s.running) {
+      mcpDot.className = 'mcp-dot on';
+      mcpState.textContent = s.reachable ? 'Online' : 'Läuft (Port noch nicht erreichbar)';
+      setMcpBtns(false, true, false, false);
+    } else {
+      mcpDot.className = 'mcp-dot off';
+      mcpState.textContent = 'Gestoppt';
+      setMcpBtns(false, false, true, false);
+    }
+    mcpMeta.textContent = s.running
+      ? `PID ${s.pid} · Port ${s.port}`
+      : `Port ${s.port}`;
+    mcpHint.textContent = s.url
+      ? `🔗 ${s.url}`
+      : (s.script_exists ? 'MCP-Server bereit zum Start' : '⚠ mcp/mcp_server.py nicht gefunden');
+  } catch (e) {
+    mcpDot.className = 'mcp-dot warn';
+    mcpState.textContent = 'Status unbekannt';
+    mcpMeta.textContent = '';
+    mcpHint.textContent = '';
+    setMcpBtns(true, true, true, true);
+  }
+}
+
+function setMcpBtns(disabled, start, stop, restart) {
+  $('btn-mcp-start').disabled   = disabled || start;
+  $('btn-mcp-stop').disabled    = disabled || stop;
+  $('btn-mcp-restart').disabled = disabled || restart;
+}
+
+async function mcpAction(action) {
+  setMcpBtns(true, true, true, true);
+  try {
+    const res = await fetch(baseUrl + '/api/mcp/' + action, { method:'POST', headers: apiHeaders() });
+    const data = await res.json();
+    showToast(action === 'start' ? 'MCP-Server gestartet ✓' :
+              action === 'stop'  ? 'MCP-Server gestoppt ✓'  : 'MCP-Server neu gestartet ✓');
+  } catch {
+    showToast('MCP-Aktion fehlgeschlagen ✗');
+  }
+  loadMcpStatus();
+}
+
+$('btn-mcp-start').addEventListener('click',   () => mcpAction('start'));
+$('btn-mcp-stop').addEventListener('click',    () => mcpAction('stop'));
+$('btn-mcp-restart').addEventListener('click', () => mcpAction('restart'));
 
 settingsMod.addEventListener('click', e => {
   if (e.target === settingsMod) settingsMod.classList.remove('open');

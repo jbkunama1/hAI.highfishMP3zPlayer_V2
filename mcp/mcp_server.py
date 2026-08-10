@@ -361,7 +361,7 @@ def build_server(port: int = 8000):
     from mcp.server.fastmcp import FastMCP
 
     server = FastMCP(name=MCP_SERVER_NAME,
-                     host='0.0.0.0', port=port)
+                     host=os.getenv('MCP_HOST', '0.0.0.0'), port=port)
 
     @server.tool()
     def search_tracks_tool(query: str, limit: int = 20) -> dict:
