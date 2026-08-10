@@ -29,17 +29,34 @@ load_dotenv(Path(__file__).parent / '.env')
 def _slug(name: str) -> str:
     return re.sub(r'[^a-z0-9_-]+', '-', name.lower()).strip('-') or 'music'
 
-_roots_env = os.getenv('MUSIC_ROOTS')
-if _roots_env:
+
+def _parse_music_roots(env: str) -> dict:
+    """Validiert MUSIC_ROOTS-JSON. Nur Objekte mit string-Keys/-Werten sind
+    gültig; doppelte Slug-Namen und leere/ungültige Werte führen zum
+    Fallback auf MUSIC_ROOT."""
     try:
-        _parsed = json.loads(_roots_env)
-        _parsed = {_slug(k): Path(v).expanduser() for k, v in _parsed.items() if v}
-        MUSIC_ROOTS = _parsed or {_slug(os.getenv('MUSIC_ROOT', 'music')): Path(os.getenv('MUSIC_ROOT', '/mnt/USBHDD_MP3z')).expanduser()}
+        data = json.loads(env)
     except json.JSONDecodeError:
         print('⚠  MUSIC_ROOTS ist kein gültiges JSON — falle auf MUSIC_ROOT zurück.')
-        MUSIC_ROOTS = {}
-else:
-    MUSIC_ROOTS = {}
+        return {}
+    if not isinstance(data, dict):
+        print('⚠  MUSIC_ROOTS muss ein JSON-Objekt sein — falle auf MUSIC_ROOT zurück.')
+        return {}
+    out = {}
+    for k, v in data.items():
+        if not isinstance(k, str) or not isinstance(v, str) or not v:
+            print(f'⚠  MUSIC_ROOTS-Eintrag übersprungen (kein String): {k!r}')
+            continue
+        slug = _slug(k)
+        if slug in out:
+            print(f'⚠  MUSIC_ROOTS: doppelter Quellenname "{slug}" — übersprungen.')
+            continue
+        out[slug] = Path(v).expanduser()
+    return out
+
+
+_roots_env = os.getenv('MUSIC_ROOTS')
+MUSIC_ROOTS = _parse_music_roots(_roots_env) if _roots_env else {}
 if not MUSIC_ROOTS:
     MUSIC_ROOTS = {'music': Path(os.getenv('MUSIC_ROOT', '/mnt/USBHDD_MP3z')).expanduser()}
 HOST        = os.getenv('HOST',             '0.0.0.0')
