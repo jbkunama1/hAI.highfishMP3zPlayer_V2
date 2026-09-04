@@ -154,8 +154,11 @@ def resolve_source(rel: str) -> Path:
     src, r = _resolve_fallback(rel)
     if src is None:
         abort(403)
+    src_resolved = src.resolve()
     full = (src / r).resolve()
-    if not str(full).startswith(str(src.resolve()) + os.sep) and full != src.resolve():
+    try:
+        full.relative_to(src_resolved)
+    except ValueError:
         abort(403)
     return full
 

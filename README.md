@@ -220,8 +220,8 @@ Das Repo baut automatisch ein **Docker-Image** via GitHub Actions und pusht es z
    SMB_PASS=deinSambaPasswort
    API_KEY_OVERRIDE=  # optional: eigener API-Key (sonst gilt SMB_PASS)
    DEFAULT_URL=http://samba.arbeitermili.eu
-   # Multi-Root optional (als Zeile):
-   MUSIC_ROOTS={"samba":"/mnt/USBHDD_MP3z","nas":"/mnt/NAS_MP3"}
+   # Multi-Root optional (als Zeile, Pfade aus Contain ersicht):
+   MUSIC_ROOTS={"samba":"/samba","nas":"/nas"}
    ```
 5. **Volumes** ändern (z.B. für Multi-Root):
    ```yaml
@@ -229,6 +229,7 @@ Das Repo baut automatisch ein **Docker-Image** via GitHub Actions und pusht es z
        - /mnt/USBHDD_MP3z:/samba:ro
        - /mnt/NAS_MP3:/nas:ro
    ```
+   Die Container-Pfade (z.B. `/samba`, `/nas`) müssen mit den Schlüsseln in `MUSIC_ROOTS` übereinstimmen.
 6. **Deploy the stack**
 
 Der Service lauscht **intern** auf Port 80 und ist **extern** unter **Port 8066** erreichbar (`http://<deine-IP>:8066`).
