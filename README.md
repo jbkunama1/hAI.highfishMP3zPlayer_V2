@@ -42,6 +42,7 @@
 | 🔒 **Sicherheit** | Timing-Attack-sichere Auth via `secrets.compare_digest` |
 | ⚡ **60k-ready** | Paginierung (80/Seite) + In-Memory-Index-Cache |
 | 🌐 **CORS** | Zugriff via Cloudflare / eigener Domain |
+| 🔄 **Multi-Root** | Unterstützt mehrere Musiksammlungen (NAS, USB, etc.) via MUSIC_ROOTS JSON |
 
 ---
 
@@ -147,6 +148,10 @@ Inhalt anpassen:
 HOST=0.0.0.0
 PORT=80
 MUSIC_ROOT=/mnt/USBHDD_MP3z
+
+# Multi-Root optional (als einzelne Zeile):
+# MUSIC_ROOTS={"samba":"/mnt/USBHDD_MP3z","nas":"/mnt/NAS_MP3"}
+
 SMB_USER=daniel              # ← dein Samba-Benutzername
 SMB_PASS=deinSambaPasswort   # ← dein Samba-Passwort = API-Key
 API_KEY_OVERRIDE=            # ← leer lassen
@@ -210,22 +215,42 @@ Das Repo baut automatisch ein **Docker-Image** via GitHub Actions und pusht es z
    - Referenz: `main` (oder ein `vX.Y.Z`-Tag)
    - Compose-Pfad: `docker-compose.yml`
 4. **Environment-Variablen** setzen:
-   ```
+   ```env
    SMB_USER=daniel
    SMB_PASS=deinSambaPasswort
    API_KEY_OVERRIDE=  # optional: eigener API-Key (sonst gilt SMB_PASS)
    DEFAULT_URL=http://samba.arbeitermili.eu
+   # Multi-Root optional (als Zeile, Pfade aus Contain ersicht):
+   MUSIC_ROOTS={"samba":"/samba","nas":"/nas"}
    ```
-5. **Deploy the stack**
+5. **Volumes** ändern (z.B. für Multi-Root):
+   ```yaml
+     volumes:
+       - /mnt/USBHDD_MP3z:/samba:ro
+       - /mnt/NAS_MP3:/nas:ro
+   ```
+   Die Container-Pfade (z.B. `/samba`, `/nas`) müssen mit den Schlüsseln in `MUSIC_ROOTS` übereinstimmen.
+6. **Deploy the stack**
 
 Der Service lauscht **intern** auf Port 80 und ist **extern** unter **Port 8066** erreichbar (`http://<deine-IP>:8066`).
 
 **Manuell via Docker:**
 ```bash
 docker pull ghcr.io/jbkunama1/hai.highfishmp3zplayer_v2:latest
+
+# Single root (legacy):
 docker run -d --name mp3z -p 8066:80 \
   -v /mnt/USBHDD_MP3z:/music:ro \
   -e SMB_USER=daniel -e SMB_PASS=deinSambaPasswort \
+  -e API_KEY_OVERRIDE=deinEigenerAPIKey \
+  ghcr.io/jbkunama1/hai.highfishmp3zplayer_v2:latest
+
+# Multi-root example:
+docker run -d --name mp3z -p 8066:80 \
+  -v /mnt/USBHDD_MP3z:/samba:ro \
+  -v /mnt/NAS_MP3:/nas:ro \
+  -e SMB_USER=daniel -e SMB_PASS=deinSambaPasswort \
+  -e MUSIC_ROOTS='{"samba":"/samba","nas":"/nas"}' \
   -e API_KEY_OVERRIDE=deinEigenerAPIKey \
   ghcr.io/jbkunama1/hai.highfishmp3zplayer_v2:latest
 ```
@@ -296,6 +321,8 @@ URL-Param: ?apikey=deinPasswort   (für stream/art)
 | `GET`  | `/manifest.json` | ✗ | PWA Manifest |
 | `GET`  | `/sw.js` | ✗ | Service Worker |
 | `GET`  | `/icon-{192,512}.png` | ✗ | App-Icons |
+
+> **Pfade:** Bei Multi-Root-Konfiguration haben alle `path`-Felder in `/api/browse`, `/api/search`, `/api/stream` und `/api/art` ein **Quellen-Präfix** (z.B. `samba/Album/Song.mp3`). Der Root-`browse` ohne `path` listet die Quellen auf. Single-Root-Verhalten ist unverändert (Pfade optional ohne Präfix).
 
 ---
 
