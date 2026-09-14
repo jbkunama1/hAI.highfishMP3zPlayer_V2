@@ -12,9 +12,13 @@ services:
       SMB_USER: ${SMB_USER:-user}
       SMB_PASS: ${SMB_PASS:-}
       API_KEY_OVERRIDE: ${API_KEY_OVERRIDE:-}
+      # JSON format: '{"name":"path","name2":"path2"}'
+      MUSIC_ROOTS: ${MUSIC_ROOTS:-}
       DEFAULT_URL: ${DEFAULT_URL:-http://localhost}
     volumes:
       - /mnt/USBHDD_MP3z:/music:ro
+      # Add more mounts as needed:
+      # - /mnt/NAS_MP3:/nas:ro
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1/api/ping')"]
       interval: 30s
