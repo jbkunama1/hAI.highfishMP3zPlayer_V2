@@ -1,0 +1,50 @@
+{
+  "name": "hAI.highfishMP3zPlayer",
+  "short_name": "MP3z",
+  "description": "Self-hosted PWA Musik-Streaming für DietPi. 60k Tracks, Shuffle, APK, Album-Art, Passwortschutz.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#ff5e3a",
+  "orientation": "portrait-primary",
+  "categories": ["music", "audio"],
+  "lang": "de",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png", 
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Shuffle",
+      "short_name": "Shuffle",
+      "description": "Zufallswiedergabe starten",
+      "url": "/?action=shuffle",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Search", 
+      "short_name": "Suche",
+      "description": "Musik suchen",
+      "url": "/?action=search",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
