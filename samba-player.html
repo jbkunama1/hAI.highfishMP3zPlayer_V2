@@ -2,7 +2,9 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="theme-color" content="#0a0a0f"/>
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -41,11 +43,12 @@
       pointer-events:none;
     }
     .login-logo {
-      font-size:52px; font-weight:900; letter-spacing:-3px; position:relative;
+          font-size:clamp(36px,8vw,52px); font-weight:900; letter-spacing:-3px; position:relative;
       background:linear-gradient(135deg,var(--acc),var(--acc2));
       -webkit-background-clip:text; -webkit-text-fill-color:transparent;
       background-clip:text; margin-bottom:8px;
-    }
+          text-align:center;
+        }
     .login-tagline {
       font-size:12px; font-family:'Syne Mono',monospace; color:var(--muted);
       letter-spacing:2px; margin-bottom:48px; position:relative; text-transform:uppercase;
@@ -90,7 +93,8 @@
       background:linear-gradient(135deg,var(--acc),var(--acc2));
       color:#fff; font-family:'Syne',sans-serif; font-weight:800;
       font-size:15px; cursor:pointer; transition:opacity .2s,transform .15s; margin-top:8px;
-    }
+          min-height:48px; touch-action:manipulation;
+        }
     #btn-login:hover   { opacity:.9; }
     #btn-login:active  { transform:scale(.97); }
     #btn-login:disabled{ opacity:.5; cursor:not-allowed; }
@@ -132,11 +136,12 @@
     .sep { color:var(--border); font-size:12px; flex-shrink:0; }
 
     .icon-btn {
-      width:32px; height:32px; border-radius:50%; border:1px solid var(--border);
+          width:40px; min-height:40px; border-radius:8px; border:1px solid var(--border);
       background:transparent; color:var(--muted); font-size:15px;
       display:flex; align-items:center; justify-content:center;
       cursor:pointer; transition:color .15s,border-color .15s; flex-shrink:0;
-    }
+          touch-action:manipulation;
+        }
     .icon-btn:hover { color:var(--text); border-color:var(--text); }
 
     #search-wrap {
@@ -202,11 +207,11 @@
       margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
     .e-add {
-      width:28px; height:28px; border-radius:50%; flex-shrink:0;
+          width:40px; min-height:40px; border-radius:8px; flex-shrink:0;
       border:1px solid var(--border); background:transparent;
       color:var(--muted); font-size:17px;
       display:flex; align-items:center; justify-content:center;
-      cursor:pointer; transition:all .15s;
+          cursor:pointer; transition:all .15s; touch-action:manipulation;
     }
     .e-add:hover { background:var(--acc); border-color:var(--acc); color:#fff; }
 
@@ -265,10 +270,10 @@
     #p-sub { font-size:10px; color:var(--muted); font-family:'Syne Mono',monospace; margin-top:1px; }
 
     .ctrl {
-      width:32px; height:32px; border-radius:50%; border:none;
+          width:40px; min-height:40px; border-radius:50%; border:none;
       background:transparent; color:var(--muted); font-size:16px;
       display:flex; align-items:center; justify-content:center;
-      cursor:pointer; transition:color .15s; flex-shrink:0; position:relative;
+          cursor:pointer; transition:color .15s; flex-shrink:0; position:relative; touch-action:manipulation;
     }
     .ctrl:hover  { color:var(--text); }
     .ctrl.active { color:var(--acc); }
@@ -315,9 +320,9 @@
     .d-actions { display:flex; gap:8px; }
     .d-btn {
       background:transparent; border:1px solid var(--border);
-      border-radius:6px; padding:3px 8px; font-size:10px;
+          border-radius:6px; padding:6px 10px; min-height:32px; font-size:10px;
       font-family:'Syne Mono',monospace; color:var(--muted);
-      cursor:pointer; transition:all .15s; letter-spacing:1px;
+          cursor:pointer; transition:all .15s; letter-spacing:1px; touch-action:manipulation;
     }
     .d-btn:hover { border-color:var(--acc); color:var(--acc); }
 
@@ -434,8 +439,8 @@
     <h2>🔐 Anmelden</h2>
     <p>Gib dein Samba-Passwort ein um auf deine Musiksammlung zuzugreifen.</p>
     <div class="field-wrap">
-      <label>Backend-URL</label>
-      <input id="l-url" type="url" placeholder="http://samba.arbeitermili.eu" autocomplete="off"/>
+          <label>Benutzername</label>
+          <input id="l-user" type="text" placeholder="daniel" autocomplete="username"/>
     </div>
     <div class="field-wrap">
       <label>Passwort</label>
@@ -543,7 +548,7 @@ const esc     = s => String(s)
 const $       = id => document.getElementById(id);
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
-let baseUrl      = localStorage.getItem('mp3z_url')    || 'http://samba.arbeitermili.eu';
+let baseUrl      = localStorage.getItem('mp3z_url')    || '';
 let apiKey       = localStorage.getItem('mp3z_apikey') || '';
 let loggedUser   = localStorage.getItem('mp3z_user')   || '';
 let currentPath  = '';
@@ -557,25 +562,25 @@ let searchTimer, artObserver;
 
 // ── DOM-REFERENZEN ────────────────────────────────────────────────────────────
 const loginScreen  = $('login-screen');
-const lUrl         = $('l-url');
-const lPass        = $('l-pass');
-const btnLogin     = $('btn-login');
-const loginError   = $('login-error');
-const browser      = $('browser');
-const loadMoreWrap = $('load-more-wrap');
+const lUser       = $('l-user');
+const lPass       = $('l-pass');
+const btnLogin    = $('btn-login');
+const loginError  = $('login-error');
+const browser     = $('browser');
+const loadMoreWrap= $('load-more-wrap');
 const loadMoreBtn  = $('btn-load-more');
 const loadMoreInfo = $('load-more-info');
-const breadcrumb   = $('breadcrumb');
-const searchEl     = $('search');
+const breadcrumb  = $('breadcrumb');
+const searchEl    = $('search');
 const searchModeEl = $('search-mode');
-const audio        = $('audio');
-const pArt         = $('p-art');
-const pTitle       = $('p-title');
-const pSub         = $('p-sub');
-const progBar      = $('prog-bar');
-const btnPlay      = $('btn-play');
-const btnShuffle   = $('btn-shuffle');
-const btnRepeat    = $('btn-repeat');
+const audio       = $('audio');
+const pArt        = $('p-art');
+const pTitle      = $('p-title');
+const pSub        = $('p-sub');
+const progBar     = $('prog-bar');
+const btnPlay     = $('btn-play');
+const btnShuffle  = $('btn-shuffle');
+const btnRepeat   = $('btn-repeat');
 const queueDrawer  = $('queue-drawer');
 const queueListEl  = $('queue-list');
 const settingsMod  = $('settings-modal');
@@ -593,7 +598,7 @@ const streamUrl  = p => `${baseUrl}/api/stream?path=${encodeURIComponent(p)}&api
 const artUrl     = p => `${baseUrl}/api/art?path=${encodeURIComponent(p)}&apikey=${encodeURIComponent(apiKey)}`;
 
 async function apiFetch(endpoint) {
-  const res = await fetch(baseUrl + endpoint, { headers: apiHeaders() });
+  const res = await fetch(url + endpoint, { headers: apiHeaders() });
   if (res.status === 401) { logout(); throw new Error('401'); }
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
@@ -620,15 +625,16 @@ document.querySelectorAll('.pw-toggle').forEach(btn => {
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
 function showLogin(msg) {
-  lUrl.value = baseUrl;
+  lUser.value = loggedUser || '';
   lPass.value = '';
   if (msg) loginError.textContent = msg;
   loginScreen.classList.remove('gone', 'hiding');
 }
 
 async function doLogin() {
-  const url  = lUrl.value.trim().replace(/\/+$/, '') || baseUrl;
-  const pass = lPass.value;
+  const url   = baseUrl || 'http://localhost';
+  const user  = lUser.value.trim() || loggedUser || 'user';
+  const pass  = lPass.value;
   if (!pass) { loginError.textContent = '⚠ Bitte Passwort eingeben'; return; }
 
   btnLogin.disabled    = true;
@@ -680,7 +686,7 @@ function logout() {
 
 btnLogin.addEventListener('click', doLogin);
 lPass.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-lUrl.addEventListener('keydown',  e => { if (e.key === 'Enter') lPass.focus(); });
+lUser.addEventListener('keydown',  e => { if (e.key === 'Enter') lPass.focus(); });
 
 // AUTO-LOGIN: gespeicherten Key gegen auth. Endpoint prüfen (FIX UX 4)
 if (apiKey) {
@@ -693,11 +699,18 @@ if (apiKey) {
       if (err.message !== '401') enterApp();
     });
 } else {
-  // Vorausfüllen der URL vom Server
-  fetch(`${baseUrl}/api/client-config`)
-    .then(r => r.json())
-    .then(d => { if (d.default_url) lUrl.value = d.default_url; })
-    .catch(() => {});
+  // URL aus .env laden, falls gespeichert
+  if (!baseUrl) {
+    fetch(`${localStorage.getItem('mp3z_url') || 'http://localhost'}/api/client-config`)
+      .then(r => r.json())
+      .then(d => { 
+        if (d.default_url) {
+          baseUrl = d.default_url;
+          localStorage.setItem('mp3z_url', baseUrl);
+        }
+      })
+      .catch(() => {});
+  }
   showLogin('');
 }
 

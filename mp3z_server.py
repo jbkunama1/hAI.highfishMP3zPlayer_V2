@@ -380,7 +380,8 @@ if __name__ == '__main__':
     if not MUSIC_ROOT.exists():
         print(f'⚠  MUSIC_ROOT nicht gefunden: {MUSIC_ROOT}')
     threading.Thread(target=index._build, daemon=True).start()
-    app.run(host=HOST, port=PORT, threaded=True)
+        print(f'Starte Server auf Port {PORT}')
+        app.run(host=HOST, port=PORT, threaded=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SYSTEMD: /etc/systemd/system/mp3z.service
