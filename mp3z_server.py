@@ -57,7 +57,7 @@ except ImportError:
 
 # ── AUTH ──────────────────────────────────────────────────────────────────────
 def check_token(token: str) -> bool:
-    if not token:
+    if not token or not API_KEY:
         return False
     h = hashlib.sha256(token.encode()).hexdigest()
     return secrets.compare_digest(h, API_KEY_HASH)
@@ -98,8 +98,9 @@ def client_config():
 # ── SICHERHEIT ────────────────────────────────────────────────────────────────
 def safe_path(rel: str) -> Path:
     rel  = rel.lstrip('/').lstrip('\\')
-    full = (MUSIC_ROOT / rel).resolve()
-    if not str(full).startswith(str(MUSIC_ROOT.resolve())):
+    root = MUSIC_ROOT.resolve()
+    full = (root / rel).resolve()
+    if not full.is_relative_to(root):
         abort(403)
     return full
 
@@ -380,8 +381,8 @@ if __name__ == '__main__':
     if not MUSIC_ROOT.exists():
         print(f'⚠  MUSIC_ROOT nicht gefunden: {MUSIC_ROOT}')
     threading.Thread(target=index._build, daemon=True).start()
-        print(f'Starte Server auf Port {PORT}')
-        app.run(host=HOST, port=PORT, threaded=True)
+    print(f'Starte Server auf Port {PORT}')
+    app.run(host=HOST, port=PORT, threaded=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SYSTEMD: /etc/systemd/system/mp3z.service
