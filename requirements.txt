@@ -3,3 +3,4 @@ flask-cors>=4.0.0
 mutagen>=1.47.0
 python-dotenv>=1.0.0
 pillow>=10.0.0
+smbprotocol>=1.13.0

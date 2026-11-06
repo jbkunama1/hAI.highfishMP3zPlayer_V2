@@ -3,18 +3,27 @@ services:
     image: ghcr.io/jbkunama1/hai.highfishmp3zplayer_v2:latest
     container_name: mp3z
     restart: unless-stopped
+    user: "${PUID:-1000}:${PGID:-1000}"
     ports:
-      - "8066:80"
+      - "${HOST_PORT:-8066}:80"
     environment:
       HOST: 0.0.0.0
       PORT: "80"
+      STORAGE_MODE: ${STORAGE_MODE:-local}
       MUSIC_ROOT: /music
+      SMB_HOST: ${SMB_HOST:-}
+      SMB_SHARE: ${SMB_SHARE:-}
+      SMB_PATH: ${SMB_PATH:-}
       SMB_USER: ${SMB_USER:-user}
       SMB_PASS: ${SMB_PASS:-}
+      SMB_DOMAIN: ${SMB_DOMAIN:-}
+      SMB_PORT: ${SMB_PORT:-445}
+      SMB_ENCRYPT: ${SMB_ENCRYPT:-false}
       API_KEY_OVERRIDE: ${API_KEY_OVERRIDE:-}
-      DEFAULT_URL: ${DEFAULT_URL:-http://localhost}
+      DEFAULT_URL: ${DEFAULT_URL:-http://localhost:8066}
     volumes:
-      - /mnt/USBHDD_MP3z:/music:ro
+      # Nur relevant bei STORAGE_MODE=local. Schreibbar (rw) für Cover-Upload/ID3-Editor.
+      - ${MUSIC_HOST_PATH:-/mnt/USBHDD_MP3z}:/music
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1/api/ping')"]
       interval: 30s
