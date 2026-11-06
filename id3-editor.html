@@ -1,0 +1,13 @@
+<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MP3z ID3-Editor</title>
+<style>body{font:16px system-ui;background:#10121a;color:#eee;max-width:640px;margin:30px auto;padding:20px}label{display:block;margin:15px 0}input,button{font:inherit;box-sizing:border-box;width:100%;padding:12px;border-radius:8px}button{margin:8px 0;cursor:pointer}pre{white-space:pre-wrap}a{color:#8cf}</style>
+<a href="/">Zurueck zum Player</a><h1>MP3-ID3-Editor</h1><p>Relativer Pfad innerhalb deiner Musiksammlung. Zuerst laden, dann speichern. Pro Aenderung wird ein Backup angelegt.</p>
+<label>Dateipfad<input id="path" placeholder="Artist/Album/Titel.mp3"></label><button id="load">Tags laden</button><form id="fields"></form><button id="save">Aenderungen speichern</button><pre id="status" aria-live="polite"></pre>
+<script>
+const names=['title','artist','album','album_artist','track','disc','year','genre'];
+const inputs={};for(const name of names){const label=document.createElement('label');label.textContent=name;const input=document.createElement('input');input.maxLength=2000;label.append(input);document.getElementById('fields').append(label);inputs[name]=input;}
+const path=document.getElementById('path'),status=document.getElementById('status');let revision='',loaded='';
+async function api(options={}){const res=await fetch('/api/id3'+(options.method?'':'?'+new URLSearchParams({path:path.value})),{...options,headers:{'X-API-Key':localStorage.getItem('mp3z_apikey')||'','Content-Type':'application/json'}});const data=await res.json();if(!res.ok)throw Error(data.error||res.status);return data;}
+async function busy(id,fn){const b=document.getElementById(id);b.disabled=true;try{await fn();}catch(e){status.textContent=e.message;}finally{b.disabled=false;}}
+document.getElementById('load').onclick=()=>busy('load',async()=>{const data=await api();revision=data.revision;loaded=path.value;for(const name of names)inputs[name].value=data.tags[name]||'';status.textContent='Geladen. Speichern schreibt erst nach Bestaetigung.';});
+document.getElementById('save').onclick=()=>busy('save',async()=>{if(!revision||loaded!==path.value)throw Error('Zuerst Tags fuer diesen Pfad laden');if(!confirm('Tags dieser MP3 aendern?'))return;const data=await api({method:'POST',body:JSON.stringify({path:path.value,revision,tags:Object.fromEntries(names.map(n=>[n,inputs[n].value]))})});revision=data.revision;status.textContent='Gespeichert. Backup: '+data.backup;});
+</script></html>

@@ -19,11 +19,13 @@ services:
       SMB_DOMAIN: ${SMB_DOMAIN:-}
       SMB_PORT: ${SMB_PORT:-445}
       SMB_ENCRYPT: ${SMB_ENCRYPT:-false}
-      API_KEY_OVERRIDE: ${API_KEY_OVERRIDE:-}
+      API_KEY_OVERRIDE: ${API_KEY_OVERRIDE:?Set separate application API key}
+      MCP_API_KEY: ${MCP_API_KEY:?Set separate MCP API key}
+      EDIT_ENABLED: ${EDIT_ENABLED:-false}
+      MCP_WRITE_ENABLED: ${MCP_WRITE_ENABLED:-false}
       DEFAULT_URL: ${DEFAULT_URL:-http://localhost:8066}
     volumes:
-      # Nur relevant bei STORAGE_MODE=local. Schreibbar (rw) für Cover-Upload/ID3-Editor.
-      - ${MUSIC_HOST_PATH:-/mnt/USBHDD_MP3z}:/music
+      - ${MUSIC_HOST_PATH:-/mnt/USBHDD_MP3z}:/music:rw
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1/api/ping')"]
       interval: 30s
@@ -32,7 +34,6 @@ services:
       start_period: 30s
     networks:
       - highfishNetwork
-
 networks:
   highfishNetwork:
     external: true

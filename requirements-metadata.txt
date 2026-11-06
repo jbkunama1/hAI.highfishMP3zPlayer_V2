@@ -1,0 +1,4 @@
+-r requirements.txt
+mcp>=1.12,<2
+starlette>=0.40,<1
+uvicorn>=0.30,<1
