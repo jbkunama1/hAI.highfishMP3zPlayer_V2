@@ -19,6 +19,8 @@ services:
       SMB_DOMAIN: ${SMB_DOMAIN:-}
       SMB_PORT: ${SMB_PORT:-445}
       SMB_ENCRYPT: ${SMB_ENCRYPT:-false}
+      APP_USERNAME: ${APP_USERNAME:?Set application username}
+      APP_PASSWORD: ${APP_PASSWORD:?Set application password}
       API_KEY_OVERRIDE: ${API_KEY_OVERRIDE:?Set separate application API key}
       MCP_API_KEY: ${MCP_API_KEY:?Set separate MCP API key}
       EDIT_ENABLED: ${EDIT_ENABLED:-false}
