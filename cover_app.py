@@ -1,10 +1,11 @@
-"""Player, own app-login, editors, mobile administration, MCP and Telegram."""
+"""Player, login, editors, mobile views, administration, MCP and Telegram."""
 import metadata_app
 from cover_service import register_mcp, install_web
 from app_login import install_login
 from library_tools import install_library
 from telegram_bot import start_bot
 from admin_ui import install_admin
+from view_modes import install_views
 
 
 def main():
@@ -16,6 +17,7 @@ def main():
         install_web(backend, service)
         install_login(backend)
         install_admin(backend)
+        install_views(backend)
         lib = install_library(server, backend)
         start_bot(lib)
         return server

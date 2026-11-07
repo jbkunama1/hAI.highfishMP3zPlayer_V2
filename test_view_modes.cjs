@@ -1,0 +1,12 @@
+const assert=require('node:assert/strict');
+const {MODES,normalize,models}=require('./view-modes.js');
+assert.equal(Object.keys(MODES).length,5);
+for(const key of Object.keys(MODES))assert.equal(normalize(key),key);
+for(const key of ['unknown','__proto__','constructor','',null])assert.equal(normalize(key),'list');
+const entry=(type,path,name)=>({dataset:{type,path,name}});
+const dir=entry('dir','Album','Album'),track=entry('file','Album/Titel.mp3','Titel.mp3');
+const rows=models([dir,track,track,entry('file','','Invalid'),entry('other','bad','Bad')]);
+assert.equal(rows.length,2);assert.equal(rows[0].element,dir);assert.equal(rows[1].element,track);
+assert.notEqual(rows[0].key,rows[1].key);
+assert.equal(models([entry('file','quote".mp3','<untrusted>')])[0].name,'<untrusted>');
+console.log('PASS: five modes, safe fallback, deduplication, preserved entry references');
