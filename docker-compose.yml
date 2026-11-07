@@ -23,6 +23,8 @@ services:
       APP_PASSWORD: ${APP_PASSWORD:?Set application password}
       API_KEY_OVERRIDE: ${API_KEY_OVERRIDE:?Set separate application API key}
       MCP_API_KEY: ${MCP_API_KEY:?Set separate MCP API key}
+      MCP_ALLOWED_HOSTS: ${MCP_ALLOWED_HOSTS:-192.168.178.26:*}
+      MCP_ALLOWED_ORIGINS: ${MCP_ALLOWED_ORIGINS:-http://192.168.178.26:8066}
       EDIT_ENABLED: ${EDIT_ENABLED:-false}
       MCP_WRITE_ENABLED: ${MCP_WRITE_ENABLED:-false}
       DEFAULT_URL: ${DEFAULT_URL:-http://localhost:8066}

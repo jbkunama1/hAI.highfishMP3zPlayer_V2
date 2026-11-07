@@ -6,6 +6,7 @@ from library_tools import install_library
 from telegram_runtime import start_bot
 from admin_ui import install_admin
 from view_modes import install_views
+from mcp_security import settings as mcp_security_settings
 
 
 def main():
@@ -23,6 +24,7 @@ def main():
         return server
 
     metadata_app.build_mcp = extended
+    metadata_app.mcp_transport_security = mcp_security_settings
     metadata_app.main()
 
 

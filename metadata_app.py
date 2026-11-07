@@ -9,7 +9,11 @@ from metadata_service import MetadataService, BearerAuth, enabled
 
 def build_mcp(service, backend):
     from mcp.server.fastmcp import FastMCP
-    server = FastMCP('MP3z', stateless_http=True, json_response=True)
+    transport_factory = globals().get('mcp_transport_security')
+    kwargs = {'stateless_http': True, 'json_response': True}
+    if transport_factory:
+        kwargs['transport_security'] = transport_factory()
+    server = FastMCP('MP3z', **kwargs)
 
     @server.tool()
     def read_id3(path: str) -> dict:

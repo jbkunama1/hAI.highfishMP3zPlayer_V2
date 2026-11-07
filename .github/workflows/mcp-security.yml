@@ -1,0 +1,13 @@
+name: MCP host security
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements-metadata.txt
+      - run: python -m unittest test_mcp_security -v
+      - run: python -m compileall -q mcp_security.py cover_app.py metadata_app.py
