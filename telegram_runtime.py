@@ -8,7 +8,8 @@ from collections import OrderedDict
 from datetime import datetime, timedelta
 from urllib.request import urlopen
 from zoneinfo import ZoneInfo
-from telegram_bot import Bot, BotError
+from telegram_admin import AdminBot as Bot
+from telegram_bot import BotError
 from library_tools import public_url
 
 LOG=logging.getLogger('mp3z.telegram.runtime')
