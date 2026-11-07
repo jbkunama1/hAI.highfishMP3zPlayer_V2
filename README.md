@@ -1,5 +1,4 @@
 <div align="center">
-[![Buy me a coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)][(https://www.buymeacoffee.com/highfish)]
 
 
 <img src="icon-192.png" width="120" height="120" alt="MP3z Logo" />
