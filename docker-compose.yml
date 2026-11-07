@@ -26,6 +26,10 @@ services:
       EDIT_ENABLED: ${EDIT_ENABLED:-false}
       MCP_WRITE_ENABLED: ${MCP_WRITE_ENABLED:-false}
       DEFAULT_URL: ${DEFAULT_URL:-http://localhost:8066}
+      PUBLIC_URL: ${PUBLIC_URL:-}
+      TELEGRAM_ENABLED: ${TELEGRAM_ENABLED:-false}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_ALLOWED_USER_IDS: ${TELEGRAM_ALLOWED_USER_IDS:-}
     volumes:
       - ${MUSIC_HOST_PATH:-/mnt/USBHDD_MP3z}:/music:rw
     healthcheck:

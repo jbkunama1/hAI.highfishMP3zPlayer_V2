@@ -1,0 +1,11 @@
+# Telegram und MCP-Erweiterung
+
+Nutzer meldete am 7. November um 10:54: bisheriger Stand laeuft. Neue Erweiterung noch nicht live bestaetigt.
+
+Portainer: TELEGRAM_ENABLED=false (Standard). Aktivierung: true, TELEGRAM_BOT_TOKEN, TELEGRAM_ALLOWED_USER_IDS (numerische IDs, kommasepariert), PUBLIC_URL=https://musik.example. PUBLIC_URL nur HTTPS-Origin ohne Pfad/Query/Credentials. Fehlende Konfiguration verhindert aktivierten Botstart. Token nie im Repo/Chat speichern. Ein Prozess/ein Bot-Token, Long Polling, keine Webhooks.
+
+Bot: nur erlaubte Benutzer in privaten Chats. /start, /help, /browse, /status, /search Begriff und freie Textsuche. Inline-Ordnernavigation/Suche mit Achterseiten und Zurueck/Weiter. Titel zeigt Coverkarte oder farbige Ersatzgrafik plus Webplayer-Link. Keine Browser-Fernsteuerung, kein automatischer Titelstart, kein Audio-Versand und kein Schreiben ueber Telegram. Sammlungspfade/Cover werden bei autorisierter Bedienung an Telegram uebermittelt. Callback-IDs: Benutzer+Chat gebunden, zehn Minuten, maximal 1024. Nach Neustart /start erneuern. Keine beliebigen Buttonfarben. Keine Live-Nachrichten durch den Assistenten versandt.
+
+MCP /agent/mcp mit bestehendem Bearer-Key: neue Tools browse_library, library_status (ohne Speicherpfad), read_cover (base64, maximal 8 MiB), get_stream_link. Bestehende Such-/ID3-/Cover-Schreibtools bleiben. PUBLIC_URL fuer Streamlinks erforderlich. Links tragen einen zufaelligen, trackgebundenen media_token statt Master-Key, gelten zehn Minuten und erloeschen bei Neustart; maximal 1024. Jeder Linkbesitzer kann bis Ablauf streamen, nicht oeffentlich posten. Normale Browser-Medien-URLs bleiben unveraendert. Keine neuen Schreibrechte/Loeschtools. Suche weiterhin Dateiname/Ordner, nicht ID3-Volltext.
+
+Neun lokale Tests ohne echte Telegram-Aufrufe bestanden. Echter MCP-SDK-Test fuer lokalen ASGI-Prozess, initialize/list/call, 401 und Schreibsperre liegt bei; lokal mangels Flask/MCP-Abhaengigkeiten uebersprungen, nicht bestanden behaupten. GitHub-Workflow installiert Abhaengigkeiten und fuehrt ihn aus; CI-Ergebnis nach Push pruefen. Echter Telegram-, Browser- und SMB-Test steht aus. Keine produktionsreife Komplettfreigabe und kein Deployment durch den Assistenten.

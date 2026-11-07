@@ -1,0 +1,18 @@
+name: MP3z integration
+on: [push, pull_request]
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install -r requirements-metadata.txt
+      - run: python -m compileall -q app_login.py metadata_app.py metadata_service.py cover_app.py cover_service.py library_tools.py telegram_bot.py
+      - run: python -m unittest test_app_login test_metadata_service test_cover_service test_player_bootstrap test_library_telegram test_mcp_integration -v
+      - run: node test_sw.cjs
+      - run: node --check cover-ui.js && node --check player-themes.js
