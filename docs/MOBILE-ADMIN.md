@@ -1,0 +1,11 @@
+# Mobile-first, neun Themes und Indexexport
+
+Die vorhandene Playeroberflaeche bleibt erhalten und erhaelt ein mobiles CSS-Layout: Suchfeld/Touchziele ab 44 px, zweizeiliger Player mit Titel oben und Steuerung unten, Safe-Area-Abstaende, dynamische Viewporthoehe, scrollbar begrenzte Dialoge. Ab 760 px breiter Player mit zentrierter Maximalbreite. Keine neue Wiedergabelogik. Browser-/Geraetepruefung steht aus.
+
+Menue im Kopf: neun Theme-Karten, Bibliotheksstatus, JSON-/CSV-Download und ID3-/Cover-Editor. Bestehende Themes bleiben plus 70s Groove (warme Farben, Serifenschrift, runde Formen), 80s Arcade (Neon, Scanlines, Monospace), Cyberpunk (kantig, gelb/cyan) und Metallic (Stahlverlauf, Silber/Blau). Auswahl lokal gespeichert, reduzierte Bewegung beruecksichtigt. Keine externe Grafik-/Fontabhaengigkeit neu eingefuehrt; bestehende Google-Fonts der Altoberflaeche bleiben. Vollstaendige Kontrast-/Accessibility-/Mobiletests fehlen.
+
+GET /api/admin/status und GET /api/admin/export?format=json|csv verlangen X-API-Key (bestehende App-Sitzung oder REST-Key). Keine Freigabe ueber Queryparameter, keine MCP-Key-Nutzung. Verwaltungsfunktionen gelten fuer das bestehende Einzelkonto; keine behauptete getrennte Adminrolle. Status zeigt Dateizahl, Storage-Modus, Indexaufbau/-alter sowie konfigurierte Editor-/MCP-/Telegramflags; Flags beweisen keine Dienst-Erreichbarkeit. Keine Zugangsdaten oder absoluten Hostpfade.
+
+Es gibt aktuell keine persistente Musikdatenbank. Exportiert wird ausschliesslich eine Kopie des aktuell vorhandenen In-Memory-Dateiindexes mit name/path/dir. JSON enthaelt Schema, Zeit, Indexstand und Aufbauflag; bei Indexaufbau/leerem Index ist der Export entsprechend alt oder leer. CSV hat nur name/path/dir und schuetzt Formel-Praefixe fuer Tabellenprogramme. Dateinamen/relative Pfade koennen persoenlich sein: Export sicher verwahren. Kein Audio-, ID3-, Cover-, Konfigurations- oder Sitzungsbackup. Keine Import-/Restorefunktion, kein Reindex-/Restart-/Loeschknopf. Es werden keine Musikdateien geschrieben.
+
+Sechs lokale Exporttests und JavaScript-Syntaxpruefung erfolgreich. Der neue Workflow testet Kernfunktionen und JS-Syntax, keinen Browser. Echte REST-Auth-/Mobil-/Touchtests nach Deployment noch erforderlich. Bestehende App-/MCP-/SMB-/Telegram-ENVs bleiben unveraendert. Kein Deployment durch den Assistenten.
