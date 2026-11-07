@@ -1,403 +1,319 @@
 <div align="center">
-
-
 <img src="icon-192.png" width="120" height="120" alt="MP3z Logo" />
-
-
-
-**Deine 60.000 Tracks. Zuhause gehostet. Überall verfügbar.**
-
-[![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![Flask](https://img.shields.io/badge/Flask-2.x-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
-[![PWA](https://img.shields.io/badge/PWA-Ready-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
-[![Android](https://img.shields.io/badge/APK-PWABuilder-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://pwabuilder.com)
-[![DietPi](https://img.shields.io/badge/DietPi-Debian-c5007d?style=for-the-badge&logo=raspberry-pi&logoColor=white)](https://dietpi.com)
-[![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
-[![Service Worker](https://img.shields.io/badge/Service_Worker-Offline_Ready-00C853?style=for-the-badge&logo=googlechrome&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API)
-[![Auth](https://img.shields.io/badge/Auth-API_Key-FF5E3A?style=for-the-badge&logo=shield&logoColor=white)](#sicherheit)
-
----
-
-> 🎵 **hAI.highfishMP3zPlayer** ist ein selbst gehosteter Musik-Streaming-Player von **Highfish AI**.  
-> Läuft auf DietPi/Debian, indiziert bis zu **60.000 Tracks** in Sekunden,  
-> und liefert sie als vollwertige **Progressive Web App** — inkl. **Android APK**.
-
+<h1>hAI.highfishMP3zPlayer V2</h1>
+<p>Deine Musiksammlung. Selbst gehostet. Im Browser, per MCP und Telegram.</p>
 </div>
 
----
+Musikplayer von TheRealTeacher / Highfish AI mit Ordnernavigation, Suche, Streaming, ID3-/Cover-Bearbeitung und optionalem Telegram-Admin-Cockpit. Die App verwendet genau eine Musikquelle: ein Host-Verzeichnis oder eine direkt angesprochene SMB-Freigabe.
 
-## ✨ Features
+## Inhalt
 
-| Feature | Details |
+- [Funktionen](#funktionen)
+- [Schnellstart mit Docker / Portainer](#schnellstart-mit-docker--portainer)
+- [Musikquelle: Host oder SMB](#musikquelle-host-oder-smb)
+- [Migration bestehender Installationen](#migration-bestehender-installationen)
+- [Zugangsdaten und Schreibfreigaben](#zugangsdaten-und-schreibfreigaben)
+- [MCP verbinden](#mcp-verbinden)
+- [Telegram-Bot und Administration](#telegram-bot-und-administration)
+- [Installation ohne Docker](#installation-ohne-docker)
+- [HTTP-API](#http-api)
+- [Tests und Fehlerbehebung](#tests-und-fehlerbehebung)
+
+## Funktionen
+
+| Bereich | Umfang |
 |---|---|
-| 🗂 **Ordner-Browser** | Navigiere durch deine gesamte Musikbibliothek mit Breadcrumb |
-| 🔍 **Globale Suche** | Serverseitige Volltextsuche über alle 60k Dateien in < 50ms |
-| 🎵 **Streaming** | HTTP Range-Requests → Seek ohne Buffering |
-| 🖼 **Album-Cover** | ID3-Tags (MP3/FLAC/M4A) oder `cover.jpg` im Ordner |
-| 📋 **Queue** | Einzelne Tracks oder ganzen Ordner — Fisher-Yates Shuffle |
-| 🔀 **Shuffle** | Zufällige Wiedergabe + Queue-Mischen per Knopfdruck |
-| 🔁 **Repeat** | Aus / Einen Titel / Gesamte Queue |
-| 🔐 **Login-Screen** | Passwortschutz mit Samba-Credentials als API-Key |
-| 📱 **PWA + APK** | Service Worker, manifest.json, Lockscreen-Controls |
-| 🔒 **Sicherheit** | Timing-Attack-sichere Auth via `secrets.compare_digest` |
-| ⚡ **60k-ready** | Paginierung (80/Seite) + In-Memory-Index-Cache |
-| 🌐 **CORS** | Zugriff via Cloudflare / eigener Domain |
+| Bibliothek | Ordnernavigation, paginierte Einträge, Suche über Datei- und Ordnernamen |
+| Wiedergabe | HTTP-Range-Streaming, Queue, Shuffle und Repeat im Webplayer |
+| Cover | Eingebettete Cover und Bilddateien im Ordner; Cover-Bearbeitung |
+| Metadaten | ID3-Editor; Schreiben nur mit entsprechender Freigabe |
+| Oberfläche | Mobile Ansichten, Themes sowie Manifest und Service Worker für die PWA |
+| Administration | Statusübersicht und Indexexport über die Admin-API |
+| MCP | Bibliothek durchsuchen, Metadaten/Cover lesen und zeitlich begrenzte Streamlinks erzeugen |
+| Telegram | Privates Inline-Cockpit, Suche, Statistik und bestätigungspflichtige Wartung |
 
----
+Der Backend-Index liegt im Arbeitsspeicher. Es werden hier keine garantierten Track-Limits, Suchzeiten oder Offline-Audio-Funktionen zugesichert. Die Wiedergabe der Dateiformate hängt auch vom verwendeten Browser ab.
 
-## 🏗 Architektur
+## Schnellstart mit Docker / Portainer
 
-```
-┌─────────────────────────────────────────────────────┐
-│              Android APK / Browser / PWA             │
-│                                                      │
-│   ┌──────────────────────────────────────────────┐  │
-│   │     samba-player.html  (Single File PWA)     │  │
-│   │                                              │  │
-│   │  🔐 Login  📁 Browse  🔍 Search  ▶ Player   │  │
-│   │  🔀 Shuffle  🔁 Repeat  📋 Queue  🖼 Art    │  │
-│   └────────────────────┬─────────────────────────┘  │
-│                         │  SW cached / HTTP           │
-└─────────────────────────┼───────────────────────────┘
-                          │  Cloudflare / Fritzbox
-          ┌───────────────▼──────────────┐
-          │          DietPi / Debian      │
-          │                               │
-          │  ┌─────────────────────────┐  │
-          │  │    mp3z_server.py       │  │
-          │  │    Flask · dotenv Auth  │  │
-          │  │                         │  │
-          │  │  POST /api/verify       │  │
-          │  │  GET  /api/browse       │  │
-          │  │  GET  /api/search       │  │
-          │  │  GET  /api/stream       │  │
-          │  │  GET  /api/art          │  │
-          │  └───────────┬─────────────┘  │
-          │              │                │
-          │  ┌───────────▼─────────────┐  │
-          │  │  /mnt/USBHDD_MP3z       │  │
-          │  │  60.000+ Audiodateien   │  │
-          │  └─────────────────────────┘  │
-          └───────────────────────────────┘
-```
+Repository: `https://github.com/jbkunama1/hAI.highfishMP3zPlayer_V2`
 
----
+Image: `ghcr.io/jbkunama1/hai.highfishmp3zplayer_v2:latest`
 
-## 📂 Projektstruktur
+1. In Portainer einen Repository-Stack mit diesem Repository und Referenz `main` anlegen.
+2. Für Host-Speicher `docker-compose.yml` wählen. Für SMB ohne Host-Bind-Mount stattdessen `docker-compose.smb.yml` wählen. Die beiden Vorlagen nicht gemeinsam verwenden.
+3. Das externe Docker-Netzwerk `highfishNetwork` muss auf dem Zielhost vorhanden sein. Falls es noch nicht existiert, vorher anlegen:
 
-```
-hAI.highfishMP3zPlayer/
-│
-├── 🎵 samba-player.html     ← PWA Frontend (eine einzige Datei!)
-├── 🐍 mp3z_server.py        ← Flask Backend
-├── ⚙️  sw.js                 ← Service Worker (Offline + Caching)
-├── 🔧 generate_icons.py     ← Icon-Generator (einmalig ausführen)
-├── 📋 requirements.txt      ← Python-Abhängigkeiten
-├── 🔑 .env.example          ← Konfigurationsvorlage (committet)
-├── 🔒 .env                  ← Deine Zugangsdaten (NICHT committet!)
-├── 🔧 systemd/
-│   └── mp3z.service         ← systemd Unit-Datei
-├── 📄 index.html            ← GitHub Pages Projektseite
-├── 📜 LICENSE               ← MIT License
-└── 📖 README.md             ← Diese Datei
-```
+   ```bash
+   docker network create highfishNetwork
+   ```
 
-> ⚠️ **`.env` niemals committen!** Sie ist in `.gitignore` eingetragen.
+4. Die benötigten Stack-Variablen eintragen. Beispiel für den Host-Modus:
 
----
+   ```ini
+   STORAGE_MODE=host
+   MUSIC_ROOT=/mnt/USBHDD_MP3z/Audio
+   HOST_PORT=8066
+   PUID=1000
+   PGID=1000
+   APP_USERNAME=DEIN_APP_BENUTZER
+   APP_PASSWORD=DEIN_EIGENES_APP_PASSWORT
+   API_KEY_OVERRIDE=DEIN_SEPARATER_API_KEY
+   MCP_API_KEY=DEIN_SEPARATER_MCP_KEY
+   EDIT_ENABLED=false
+   MCP_WRITE_ENABLED=false
+   TELEGRAM_ENABLED=false
+   ```
 
-## 🚀 Installation
+   Alle Zugangsdaten-Platzhalter durch eigene Werte ersetzen. Für Schlüssel beispielsweise `python3 -c 'import secrets; print(secrets.token_urlsafe(32))'` verwenden; API- und MCP-Key getrennt erzeugen. Geheimnisse nicht ins Repository übernehmen.
 
-### Voraussetzungen
+5. Stack bereitstellen. Der Container lauscht intern auf Port 80; Standard-Host-Port ist 8066. Webplayer: `http://DEINE_SERVER_IP:8066/`.
 
-- 🐧 **Debian 11 Bullseye** oder **DietPi**
-- 🐍 Python 3.9+
-- 🌐 Domain mit DNS-Eintrag (Cloudflare empfohlen)
-- 📂 Musiksammlung gemountet (z.B. `/mnt/USBHDD_MP3z`)
+PUID und PGID müssen zu den Dateirechten auf deinem Host passen. Die Host-Vorlage bindet die Musikquelle beschreibbar ein; die App-Schreibfreigaben sind zusätzlich getrennt zu setzen.
 
----
-
-### Schritt 1 — Repo klonen
+Für CLI-Nutzung das Repository klonen, die Variablen in einer lokalen `.env` setzen und die passende Vorlage verwenden:
 
 ```bash
-mkdir -p /opt/mp3z && cd /opt/mp3z
-git clone https://github.com/therealteacher/hAI.highfishMP3zPlayer.git .
+git clone https://github.com/jbkunama1/hAI.highfishMP3zPlayer_V2.git
+cd hAI.highfishMP3zPlayer_V2
+docker compose -f docker-compose.yml up -d
 ```
 
----
+Ein Commit auf GitHub bestätigt noch keinen erfolgreichen Image-Build oder ein Deployment. Vor einem Update prüfen, ob das gewünschte Image tatsächlich bereitsteht.
 
-### Schritt 2 — Abhängigkeiten installieren
+## Musikquelle: Host oder SMB
 
-```bash
-pip install -r requirements.txt --break-system-packages
-```
-
----
-
-### Schritt 3 — `.env` konfigurieren
-
-```bash
-cp .env.example .env
-joe .env
-```
-
-Inhalt anpassen:
+### Host-Verzeichnis
 
 ```ini
-HOST=0.0.0.0
-PORT=80
-MUSIC_ROOT=/mnt/USBHDD_MP3z
-SMB_USER=daniel              # ← dein Samba-Benutzername
-SMB_PASS=deinSambaPasswort   # ← dein Samba-Passwort = API-Key
-API_KEY_OVERRIDE=            # ← leer lassen
-DEFAULT_URL=http://samba.arbeitermili.eu
+STORAGE_MODE=host
+MUSIC_ROOT=/mnt/USBHDD_MP3z/Audio
 ```
 
----
+`MUSIC_ROOT` ist die einzige Host-Pfadvariable. `MUSIC_HOST_PATH` wird in der aktuellen Vorlage nicht mehr verwendet. Ohne `STORAGE_MODE` startet die normale App standardmäßig im Host-Modus; `local` bleibt als kompatibler Alias zulässig. In Statusanzeigen heißt dieser Backend-Modus weiterhin `local`.
 
-### Schritt 4 — Icons generieren
+Die Host-Compose-Vorlage verwendet denselben Pfad an allen drei Stellen:
 
-```bash
-python3 generate_icons.py
-# → icon-192.png und icon-512.png werden erstellt
+```text
+Host-Verzeichnis:  /mnt/USBHDD_MP3z/Audio
+Container-Ziel:   /mnt/USBHDD_MP3z/Audio
+App-MUSIC_ROOT:   /mnt/USBHDD_MP3z/Audio
 ```
 
----
+Damit beginnt die Bibliothek beim Inhalt von `Audio`, nicht beim übergeordneten Datenträgerverzeichnis. Der Pfad muss absolut sein, existieren und für den Container-Benutzer lesbar sowie durchsuchbar sein. Die Vorlage setzt `create_host_path: false`: Ein falscher Pfad wird nicht als leeres Verzeichnis angelegt. Es gibt keinen automatischen Rückfall auf das Elternverzeichnis oder einen Standardordner.
 
-### Schritt 5 — Teststart
+### Direkte SMB-Quelle
 
-```bash
-python3 mp3z_server.py
-```
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- 🎵 hAI.highfishMP3zPlayer  v2.0.0
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  User      : daniel
-  MusicRoot : /mnt/USBHDD_MP3z
-  URL       : http://0.0.0.0:80
-  API-Key   : ✓ gesetzt
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔍 Baue Datei-Index …
-✓ Index: 61243 Dateien in 18.3s
-```
-
----
-
-### Schritt 6 — Autostart via systemd
-
-```bash
-cp systemd/mp3z.service /etc/systemd/system/
-systemctl daemon-reload
-systemctl enable mp3z
-systemctl start mp3z
-systemctl status mp3z
-```
-
----
-
-### Schritt 7 — Docker / Portainer-Stack (alternativ zu systemd)
-
-Das Repo baut automatisch ein **Docker-Image** via GitHub Actions und pusht es zu **GHCR** (`ghcr.io/jbkunama1/hai.highfishmp3zplayer_v2`).
-
-**In Portainer deployen:**
-
-1. **Environments → dein Server → Stacks → Add stack**
-2. Name: `mp3z`
-3. **Repository** auswählen:
-   - Repository URL: `https://github.com/jbkunama1/hAI.highfishMP3zPlayer_V2`
-   - Referenz: `main` (oder ein `vX.Y.Z`-Tag)
-   - Compose-Pfad: `docker-compose.yml`
-4. **Environment-Variablen** setzen:
-   ```
-   SMB_USER=daniel
-   SMB_PASS=deinSambaPasswort
-   API_KEY_OVERRIDE=  # optional: eigener API-Key (sonst gilt SMB_PASS)
-   DEFAULT_URL=http://samba.arbeitermili.eu
-   ```
-5. **Deploy the stack**
-
-Der Service lauscht **intern** auf Port 80 und ist **extern** unter **Port 8066** erreichbar (`http://<deine-IP>:8066`).
-
-**Manuell via Docker:**
-```bash
-docker pull ghcr.io/jbkunama1/hai.highfishmp3zplayer_v2:latest
-docker run -d --name mp3z -p 8066:80 \
-  -v /mnt/USBHDD_MP3z:/music:ro \
-  -e SMB_USER=daniel -e SMB_PASS=deinSambaPasswort \
-  -e API_KEY_OVERRIDE=deinEigenerAPIKey \
-  ghcr.io/jbkunama1/hai.highfishmp3zplayer_v2:latest
-```
-
-> ⚠️ **Wichtig:** Die Musiksammlung muss als Volume gemountet sein (`/mnt/USBHDD_MP3z:/music:ro`). Das Image läuft als **Nicht-root-Benutzer** — bei gemounteten NTFS-Dateisystemen ggf. `user_uid`/`user_gid` am Mount setzen.
-
----
-
-### Schritt 8 — Domain einrichten
-
-```
-Fritzbox Port-Forwarding:
-  Extern 8066 → DietPi-IP : 8066   (Docker-Setup, Host-Port 8066)
-  – oder direkt –  Extern 80 → DietPi-IP : 80   (systemd-Setup)
-
-Cloudflare DNS:
-  A-Record: samba.arbeitermili.eu → WAN-IP
-  Proxy:    ☁ Proxied (kostenlos HTTPS!)
-```
-
----
-
-## 📱 Android APK erstellen
-
-### PWABuilder (empfohlen, kostenlos)
-
-```
-1. https://pwabuilder.com aufrufen
-2. URL eingeben: http://samba.arbeitermili.eu
-3. "Start" → Score prüfen (sollte ≥ 80 sein)
-4. "Android" → "Download Package"
-5. APK auf Handy → Einstellungen → Unbekannte Quellen → Installieren
-```
-
-### Bubblewrap CLI
-
-```bash
-npm install -g @bubblewrap/cli
-bubblewrap init --manifest http://samba.arbeitermili.eu/manifest.json
-bubblewrap build
-# → app-release-unsigned.apk
-```
-
----
-
-## 🔍 API Referenz
-
-### Authentifizierung
-
-Alle Endpoints außer `/api/verify` und `/api/client-config` benötigen den API-Key:
-
-```
-Header:    X-API-Key: deinPasswort
-URL-Param: ?apikey=deinPasswort   (für stream/art)
-```
-
-### Endpoints
-
-| Method | Endpoint | Auth | Beschreibung |
-|--------|----------|------|---|
-| `POST` | `/api/verify` | ✗ | Login — prüft API-Key |
-| `GET`  | `/api/client-config` | ✗ | Öffentliche App-Konfiguration |
-| `GET`  | `/api/browse` | ✓ | Paginiertes Verzeichnis-Listing |
-| `GET`  | `/api/search` | ✓ | Globale Volltextsuche |
-| `GET`  | `/api/stream` | ✓ | Audio-Streaming (Range-Requests) |
-| `GET`  | `/api/art` | ✓ | Album-Cover |
-| `GET`  | `/api/index-status` | ✓ | Index-Statistik |
-| `GET`  | `/manifest.json` | ✗ | PWA Manifest |
-| `GET`  | `/sw.js` | ✗ | Service Worker |
-| `GET`  | `/icon-{192,512}.png` | ✗ | App-Icons |
-
----
-
-## 🔒 Sicherheit
+Die eigenständige Vorlage `docker-compose.smb.yml` verwenden:
 
 ```ini
-# .env
-SMB_PASS=deinSambaPasswort   # = API-Key
+STORAGE_MODE=smb
+SMB_HOST=DEIN_SMB_SERVER
+SMB_SHARE=DEINE_FREIGABE
+SMB_PATH=Audio
+SMB_USER=DEIN_SMB_BENUTZER
+SMB_PASS=DEIN_SMB_PASSWORT
+SMB_PORT=445
+SMB_DOMAIN=
+SMB_ENCRYPT=false
 ```
 
-- ✅ Timing-Attack-sicher via `secrets.compare_digest()`  
-- ✅ SHA-256-Hash — Klartext-Passwort nie im Speicher verglichen  
-- ✅ Directory-Traversal-Schutz via `Path.resolve()`  
-- ✅ `.env` in `.gitignore` — Credentials niemals im Repo  
-- ✅ HTTPS kostenlos via Cloudflare-Proxy empfohlen  
+`SMB_PATH` ist relativ zur Freigabe. Leer bedeutet ausdrücklich die Wurzel der Freigabe. SMB-Host, Freigabe, Benutzer und Passwort müssen gesetzt sein. Im SMB-Modus wird `MUSIC_ROOT` nicht als Musikquelle verwendet; fehlende SMB-Konfiguration führt nicht zum Wechsel auf Host-Speicher. Die SMB-Vorlage enthält keinen Host-Bind-Mount.
 
----
+```bash
+docker compose -f docker-compose.smb.yml up -d
+```
 
-## ⚡ Performance
+`STORAGE_MODE` wählt die aktive App-Quelle per ENV, entfernt aber keine in Compose definierten Docker-Mounts. Wer die Host-Vorlage behält und dort `smb` setzt, behält einen ungenutzten Host-Mount und benötigt weiterhin deren `MUSIC_ROOT`-Variable. Für ein Deployment ohne diesen Mount ist die SMB-Vorlage erforderlich. Konfigurationswechsel benötigen eine Neuerstellung des Containers; es gibt kein Live-Umschalten.
 
-| Operation | Zeit |
+Details: [Storage-Konfiguration](docs/STORAGE.md).
+
+## Migration bestehender Installationen
+
+**Ein Image-Update allein korrigiert keinen alten Mount.**
+
+Bei bisherigen Installationen mit `/mnt/USBHDD_MP3z:/music` und festem `MUSIC_ROOT=/music`:
+
+1. Die bisherige Stack-Konfiguration und die eigenen Variablen sichern; Geheimnisse nicht veröffentlichen.
+2. Für den Host-Betrieb die aktuelle `docker-compose.yml` übernehmen.
+3. `MUSIC_ROOT=/mnt/USBHDD_MP3z/Audio` als Stack-Variable setzen. Den alten Elternverzeichnis-Mount und die feste `/music`-Vorgabe nicht zusätzlich behalten.
+4. Ein Image mit dem aktuellen Code bereitstellen und den Container mit der neuen Compose-Konfiguration neu erstellen.
+5. Die Startlogs kontrollieren und die Bibliothek neu öffnen. Erwartet wird der Inhalt von `Audio`; `Video` und `lost+found` aus dem Elternverzeichnis sollen damit nicht als Root-Einträge erscheinen.
+
+Beim Wechsel auf SMB stattdessen die SMB-Vorlage wählen und die SMB-Variablen setzen. Bestehende Telegram-Menübuttons und temporäre Streamlinks überleben einen Prozessneustart nicht; nach dem Update `/start` im Bot verwenden.
+
+## Zugangsdaten und Schreibfreigaben
+
+| Variable | Zweck |
 |---|---|
-| Index-Aufbau (60k Dateien) | ~15–30s (einmalig beim Start) |
-| Suche nach Index-Build | < 50ms |
-| Ordner laden (80 Einträge) | < 100ms |
-| Album-Art (gecacht) | sofort (86400s Cache-Control) |
-| Stream-Start | sofort (Range-Request) |
+| `APP_USERNAME`, `APP_PASSWORD` | Eigenständiger Webplayer-Login; unabhängig von SMB |
+| `API_KEY_OVERRIDE` | Expliziter Schlüssel für die HTTP-API |
+| `MCP_API_KEY` | Separater Bearer-Key für MCP |
+| `SMB_USER`, `SMB_PASS` | Zugang zur SMB-Quelle, kein Ersatz für den App-Login |
+| `EDIT_ENABLED` | Schreibfreigabe für Editor-Funktionen |
+| `MCP_WRITE_ENABLED` | Zusätzliche Freigabe für MCP-Schreiboperationen |
 
----
+Die vollständige App wird über `cover_app.py` gestartet und verlangt einen expliziten `API_KEY_OVERRIDE`. Alte Anleitungen, die `SMB_PASS` als App-Passwort/API-Key empfehlen oder den Override leer lassen, gelten dafür nicht mehr.
 
-## 🗂 Unterstützte Formate
+Der App-Login erstellt zeitlich begrenzte In-Memory-Sitzungen. Ein Neustart entfernt diese Sitzungen. Für Zugriff außerhalb eines vertrauenswürdigen lokalen Netzes HTTPS vorsehen; Schlüssel und Passwörter weder in öffentliche URLs noch in Screenshots oder Logs kopieren. Eine Host-Allowlist ersetzt keine Authentifizierung.
 
-| Format | Streaming | Album-Art |
-|--------|-----------|-----------|
-| MP3  | ✅ | ✅ ID3 APIC |
-| FLAC | ✅ | ✅ Picture Block |
-| M4A  | ✅ | ✅ covr Atom |
-| OGG  | ✅ | ⚠ cover.jpg |
-| WAV  | ✅ | ⚠ cover.jpg |
-| AAC  | ✅ | ✅ |
-| OPUS | ✅ | ⚠ cover.jpg |
-| WMA  | ✅ | ❌ |
+## MCP verbinden
 
----
+Streamable-HTTP-Endpunkt:
 
-## 🛠 Troubleshooting
-
-**Port 80 belegt?**
-```bash
-# .env ändern:
-PORT=8080
-# Fritzbox: Extern 80 → Intern 8080
+```text
+http://DEINE_SERVER_IP:8066/agent/mcp
 ```
 
-**Index baut nicht?**
-```bash
-ls -la /mnt/USBHDD_MP3z    # Mountpoint prüfen
-df -h | grep USBHDD         # Mount prüfen
+Authentifizierung:
+
+```text
+Authorization: Bearer DEIN_SEPARATER_MCP_KEY
 ```
 
-**Icons fehlen?**
-```bash
-python3 generate_icons.py
+Der Client muss den Server erreichen können. Bei einem Tunnel oder Reverse Proxy die tatsächlich erreichbare URL verwenden.
+
+### Invalid Host header
+
+Der DNS-Rebinding-Schutz bleibt eingeschaltet. Den Host der verwendeten MCP-URL gezielt erlauben, beispielsweise für den LAN-Host dieser Installation:
+
+```ini
+MCP_ALLOWED_HOSTS=192.168.178.26:*
+MCP_ALLOWED_ORIGINS=http://192.168.178.26:8066
 ```
 
-**Login schlägt fehl?**
-```bash
-curl -X POST http://localhost/api/verify \
-  -H "Content-Type: application/json" \
-  -d '{"apikey":"deinPasswort"}'
-# Sollte: {"ok": true, "user": "daniel"}
+Host-Einträge sind kommasepariert. `:*` erlaubt beliebige Ports dieses konkreten Hosts, nicht beliebige Hosts. Eine globale Host-Freigabe `*` wird von der Konfigurationsprüfung abgelehnt. Browser-Origins sind separat zu behandeln. Für eine eigene Domain oder einen Tunnel den passenden Host und gegebenenfalls die passende Origin ergänzen; den Schutz nicht pauschal abschalten.
+
+Nach Konfigurationsänderungen den Container neu erstellen und im MCP-Client die Verbindung beziehungsweise Tool-Erkennung erneuern. Details: [MCP-Verbindung](docs/MCP-CONNECTION.md).
+
+### Werkzeuge und Grenzen
+
+Zu den Werkzeugen gehören `read_id3`, `update_id3`, `search_tracks`, `browse_library`, `library_status`, `read_cover` und `get_stream_link`. Schreiboperationen benötigen die passenden Freigaben; Metadatenänderungen verwenden eine zuvor gelesene Revision. Temporäre Streamlinks sind titelbezogene Freigaben mit zehn Minuten Laufzeit und sollten wie Zugangslinks behandelt werden.
+
+## Telegram-Bot und Administration
+
+Der Bot ist optional. Beispielvariablen:
+
+```ini
+TELEGRAM_ENABLED=true
+TELEGRAM_BOT_TOKEN=DEIN_BOT_TOKEN
+TELEGRAM_ALLOWED_USER_IDS=DEINE_NUMERISCHE_USER_ID
+TELEGRAM_STATUS_CHAT_ID=DEINE_NUMERISCHE_USER_ID
+TELEGRAM_STATUS_TIMEZONE=Europe/Berlin
+PUBLIC_URL=
 ```
 
-**Service Worker aktualisieren?**
+Mehrere erlaubte User-IDs werden kommasepariert angegeben. Für automatische Statusmeldungen muss `TELEGRAM_STATUS_CHAT_ID` genau eine erlaubte private User-ID sein. Ohne diese Variable bleiben automatische Meldungen aus. Bei Konfiguration sendet der Runtime-Bot eine Startmeldung nach HTTP-Bereitschaft und täglich um 22:00 Uhr in der gewählten Zeitzone einen Status.
+
+`PUBLIC_URL` ist optional. Wenn gesetzt, muss sie eine HTTPS-Origin ohne Zugangsdaten, Query, Fragment oder zusätzlichen Pfad sein. Ohne sie entfällt der Webplayer-URL-Button; der Runtime-Bot kann trotzdem verwendet werden. Die automatische Statuskonfiguration zeigt nicht an, dass eine Zustellung tatsächlich erfolgreich war.
+
+### Befehle und Inline-Cockpit
+
+| Befehl | Funktion |
+|---|---|
+| `/start` | Musik-Cockpit mit Inline-Buttons |
+| `/admin` | Wartungsmenü |
+| `/status` | Bibliotheksstatus, Bot-Modullaufzeit und aktive temporäre Links |
+| `/stats` | Titelzahl, Ordner mit indexierten Titeln und Dateiformate |
+| `/settings` | Konfigurationsübersicht ohne Tokens, Passwörter oder Speicherpfade |
+| `/browse` | Ordnernavigation |
+| `/search Begriff` | Suche; alternativ einen Suchbegriff als Nachricht senden |
+| `/help` | Hilfe |
+| `/cancel` | Ausstehende Wartungsbestätigungen dieses Nutzers/Chats abbrechen |
+
+Das Cockpit nutzt deutsche Texte mit Emojis. Es bietet Index-Neuaufbau, Sperren aller gespeicherten temporären Streamlinks und Deaktivieren alter Menübuttons im eigenen Chat. Der Neuaufbau wird im Hintergrund angestoßen; die Startbestätigung ist kein Nachweis eines erfolgreichen Abschlusses. Das Sperren der Links betrifft auch Freigaben anderer Nutzer, beendet aber bereits laufende Downloads nicht aktiv.
+
+Der Bot akzeptiert nur freigegebene private Chats. Alle Nutzer aus `TELEGRAM_ALLOWED_USER_IDS` erhalten die Admin-Funktionen; getrennte Leser-/Adminrollen sind nicht implementiert. Wartungsbestätigungen sind an Nutzer und Chat gebunden, gelten 60 Sekunden und werden vor Ausführung verbraucht. Normale Menübuttons laufen nach zehn Minuten ab. Eine Fernsteuerung der Wiedergabe in einem bereits geöffneten Browser ist nicht enthalten.
+
+## Installation ohne Docker
+
+Für die vollständige Anwendung Python 3.11 wie im Docker-Image verwenden. Installation beispielsweise in einer virtuellen Umgebung:
+
 ```bash
-# Cache-Name in sw.js erhöhen:
-const CACHE_NAME = 'mp3z-v2';  # war v1
+git clone https://github.com/jbkunama1/hAI.highfishMP3zPlayer_V2.git
+cd hAI.highfishMP3zPlayer_V2
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements-metadata.txt
 ```
 
----
+Eine lokale `.env` mit den App-/API-/MCP-Zugangsdaten und genau einer Storage-Konfiguration anlegen. Zusätzlich beispielsweise `HOST=0.0.0.0` und `PORT=8066` setzen. Danach:
 
-## 👤 Autor
+```bash
+python cover_app.py
+```
 
-**TheRealTeacher** — Lehrer · IT-Professional · Maker · Highfish AI
+Nicht `mp3z_server.py` als Ersatz für den vollständigen App-Start verwenden: Dieser ältere direkte Backend-Start aktiviert nicht alle Login-, Editor-, Admin-, Telegram- und Storage-Bootstrap-Erweiterungen. Bei systemd die vorhandene Unit vor Verwendung prüfen und Interpreter, Arbeitsverzeichnis, Benutzer sowie `ExecStart` auf die vollständige Anwendung anpassen; die ältere Unit nicht ungeprüft übernehmen.
 
-[![GitHub](https://img.shields.io/badge/GitHub-therealteacher-181717?style=flat-square&logo=github)](https://github.com/therealteacher)
-[![Highfish AI](https://img.shields.io/badge/Highfish-AI-ff5e3a?style=flat-square)](https://highfishai.de)
-[![Instagram](https://img.shields.io/badge/Instagram-realteacher-E4405F?style=flat-square&logo=instagram)](https://instagram.com/realteacher)
+## HTTP-API
 
----
+Die folgenden Angaben beziehen sich auf den vollständigen Start über `cover_app.py`.
 
-## 📜 Lizenz
+| Methode | Pfad | Zweck |
+|---|---|---|
+| `POST` | `/api/verify` | App-Login mit JSON-Feldern `username` und `password`; liefert Sitzungstoken |
+| `POST` | `/api/logout` | Sitzungstoken aus `X-API-Key` widerrufen |
+| `GET` | `/api/browse` | Ordner mit Pagination |
+| `GET` | `/api/search` | Suche über den Index |
+| `GET` | `/api/stream` | Audio-Streaming mit Range-Unterstützung |
+| `GET` | `/api/art` | Cover lesen |
+| `GET` | `/api/index-status` | Indexstatus |
+| `GET`, `POST` | `/api/id3` | Metadaten lesen beziehungsweise mit Freigabe ändern |
+| `GET` | `/api/admin/status` | Administrative Statusübersicht |
+| `GET` | `/api/admin/export` | Indexexport, `format=json` oder `format=csv` |
+| `GET` | `/api/ping` | HTTP-Bereitschaft; kein vollständiger Speichertest |
 
-MIT License — mach damit was du willst, aber nenn die Quelle. 🤝
+Geschützte HTTP-API-Aufrufe verwenden `X-API-Key` mit dem API-Key oder einem gültigen App-Sitzungstoken. MCP verwendet stattdessen seinen separaten Bearer-Key. Erfolgreicher Login oder `/api/ping` beweist nicht, dass eine SMB-Freigabe erreichbar ist.
 
----
+## Tests und Fehlerbehebung
 
-<div align="center">
+Nach Installation der Python-Abhängigkeiten können die gezielten Tests ohne echte Telegram-Aufrufe ausgeführt werden:
 
-**Made with 🎵 + ☕ + 🤖 by TheRealTeacher / Highfish AI**
+```bash
+python -m unittest test_storage_config test_mcp_security test_telegram_admin test_app_login -v
+```
 
-*Self-hosted · Privacy-first · No cloud needed · 60k Tracks kein Problem*
+Unit-Tests ersetzen keinen echten SMB-Verbindungstest, Image-Build oder Deploymenttest. Hier wird kein aktueller grüner CI-/Build-Status behauptet.
 
-</div>
+| Symptom | Prüfen |
+|---|---|
+| `Audio`, `Video`, `lost+found` als Root-Einträge | Alten Elternverzeichnis-Mount und feste `/music`-Vorgabe entfernen; aktuelle Host-Vorlage und exaktes `MUSIC_ROOT` verwenden |
+| Host-Start scheitert | Existenz, absoluter Pfad, tatsächlicher Container-Mount und Lese-/Suchrechte des PUID/PGID-Benutzers |
+| SMB-Konfiguration fehlt oder SMB nicht erreichbar | Modus, Host, Share, relative `SMB_PATH`, Zugangsdaten und Netzwerk prüfen; kein Host-Fallback erwarten |
+| `Invalid Host header` bei MCP | Tatsächlich verwendeten Host in der MCP-Allowlist konfigurieren; Container neu erstellen und Tools neu erkennen |
+| Web-Login schlägt fehl | `APP_USERNAME`/`APP_PASSWORD` statt SMB-Zugang verwenden |
+| Telegram reagiert nicht | Aktivierung, Token, numerische Allowlist, privater Chat und Logs prüfen; nach Update `/start` senden |
+| Keine automatischen Telegram-Meldungen | Erlaubte private `TELEGRAM_STATUS_CHAT_ID`, Zeitzone und Zustellfehler prüfen |
+| Webplayer-Button fehlt | Optionale `PUBLIC_URL` als gültige HTTPS-Origin konfigurieren |
+| Änderung nach GitHub-Push nicht sichtbar | Verfügbarkeit des richtigen Images sowie Stack-Konfiguration und Neuerstellung des Containers prüfen |
 
+## Projektstruktur
+
+```text
+cover_app.py                Vollständiger App-Einstieg
+storage_config.py           Exklusive Storage-Auswahl und Startprüfung
+mp3z_server.py              Backend, Storage-Implementierungen und Dateiindex
+metadata_app.py             HTTP-/MCP-App und ID3-API
+metadata_service.py         Metadatenservice und MCP-Authentifizierung
+cover_service.py            Cover-Funktionen
+app_login.py                Eigenständiger App-Login und Sitzungen
+library_tools.py            Gemeinsame Bibliotheksfunktionen und Streamlinks
+telegram_bot.py             Basis-Bot und Telegram-Transport
+telegram_admin.py           Inline-Cockpit und Wartung
+telegram_runtime.py         Optionaler Bot-Start und Statusmeldungen
+samba-player.html           Webplayer; Erweiterungen über Bootstrap-Dateien
+docker-compose.yml          Host-Vorlage mit exakt MUSIC_ROOT
+docker-compose.smb.yml      Eigenständige SMB-Vorlage ohne Host-Bind-Mount
+docs/STORAGE.md             Storage-Details
+docs/MCP-CONNECTION.md      MCP-Verbindungsdetails
+```
+
+## Autor und Lizenz
+
+TheRealTeacher — Lehrer, IT-Professional, Maker / Highfish AI.
+
+- [Originalautor auf GitHub](https://github.com/therealteacher)
+- [Highfish AI](https://highfishai.de)
+- [Instagram](https://instagram.com/realteacher)
+
+MIT-Lizenz; siehe [LICENSE](LICENSE). Urheber- und Lizenzhinweise bei Weitergabe erhalten.
