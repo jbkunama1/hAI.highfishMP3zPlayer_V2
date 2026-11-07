@@ -1,0 +1,11 @@
+(() => {
+'use strict';
+const section=document.createElement('section');
+section.innerHTML='<h2>Cover hochladen</h2><p>MP3: Frontcover einbetten. Ordner: cover.jpg speichern. Leer bedeutet Musik-Root. Vorhandene Ziele werden gesichert.</p><label>Ziel<select id="cover-target"><option value="embedded">In MP3 einbetten</option><option value="folder">cover.jpg im Ordner</option></select></label><label>Relativer Zielpfad<input id="cover-path" placeholder="Artist/Album/Track.mp3"></label><label>Bild (JPEG/PNG/WEBP, max. 8 MiB)<input id="cover-file" type="file" accept="image/jpeg,image/png,image/webp"></label><img id="cover-preview" alt="Vorschau des ausgewaehlten Covers" hidden style="max-width:240px;max-height:240px"><button id="cover-send">Cover hochladen</button><pre id="cover-status" aria-live="polite"></pre>';
+document.body.append(section);
+const byId=id=>document.getElementById(id), file=byId('cover-file'), preview=byId('cover-preview');
+let previewUrl='';
+file.onchange=()=>{if(previewUrl)URL.revokeObjectURL(previewUrl);preview.hidden=!file.files[0];if(file.files[0]){previewUrl=URL.createObjectURL(file.files[0]);preview.src=previewUrl;}};
+async function api(url,options={}){const r=await fetch(url,{...options,headers:{'X-API-Key':localStorage.getItem('mp3z_apikey')||''},cache:'no-store'});const data=await r.json();if(!r.ok)throw Error(data.error||r.status);return data;}
+byId('cover-send').onclick=async()=>{const button=byId('cover-send'),status=byId('cover-status');button.disabled=true;try{const image=file.files[0];if(!image||image.size>8*1024*1024)throw Error('Bild bis maximal 8 MiB waehlen');const path=byId('cover-path').value,target=byId('cover-target').value;const info=await api('/api/cover-upload?'+new URLSearchParams({path,target}));if(!confirm('Cover ersetzen: '+info.path+'?'))return;const body=new FormData();body.append('path',path);body.append('target',target);body.append('revision',info.revision);body.append('cover',image);const result=await api('/api/cover-upload',{method:'POST',body});status.textContent='Gespeichert: '+result.path+'\nBackup: '+(result.backup||'neues Cover, kein altes Ziel');status.textContent+='\nBei MP3-Bearbeitung die ID3-Tags vor dem naechsten Speichern neu laden.';}catch(e){status.textContent=e.message;}finally{button.disabled=false;}};
+})();
