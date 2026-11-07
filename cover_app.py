@@ -3,7 +3,7 @@ import metadata_app
 from cover_service import register_mcp, install_web
 from app_login import install_login
 from library_tools import install_library
-from telegram_bot import start_bot
+from telegram_runtime import start_bot
 from admin_ui import install_admin
 from view_modes import install_views
 
