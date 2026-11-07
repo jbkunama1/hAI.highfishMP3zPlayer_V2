@@ -1,0 +1,47 @@
+services:
+  mp3z:
+    image: ghcr.io/jbkunama1/hai.highfishmp3zplayer_v2:latest
+    container_name: mp3z
+    restart: unless-stopped
+    user: "${PUID:-1000}:${PGID:-1000}"
+    ports:
+      - "${HOST_PORT:-8066}:80"
+    environment:
+      HOST: 0.0.0.0
+      PORT: "80"
+      STORAGE_MODE: ${STORAGE_MODE:-smb}
+      MUSIC_ROOT: ""
+      SMB_HOST: ${SMB_HOST:-}
+      SMB_SHARE: ${SMB_SHARE:-}
+      SMB_PATH: ${SMB_PATH:-}
+      SMB_USER: ${SMB_USER:-}
+      SMB_PASS: ${SMB_PASS:-}
+      SMB_DOMAIN: ${SMB_DOMAIN:-}
+      SMB_PORT: ${SMB_PORT:-445}
+      SMB_ENCRYPT: ${SMB_ENCRYPT:-false}
+      APP_USERNAME: ${APP_USERNAME:?Set application username}
+      APP_PASSWORD: ${APP_PASSWORD:?Set application password}
+      API_KEY_OVERRIDE: ${API_KEY_OVERRIDE:?Set separate application API key}
+      MCP_API_KEY: ${MCP_API_KEY:?Set separate MCP API key}
+      MCP_ALLOWED_HOSTS: ${MCP_ALLOWED_HOSTS:-192.168.178.26:*}
+      MCP_ALLOWED_ORIGINS: ${MCP_ALLOWED_ORIGINS:-http://192.168.178.26:8066}
+      EDIT_ENABLED: ${EDIT_ENABLED:-false}
+      MCP_WRITE_ENABLED: ${MCP_WRITE_ENABLED:-false}
+      DEFAULT_URL: ${DEFAULT_URL:-http://localhost:8066}
+      PUBLIC_URL: ${PUBLIC_URL:-}
+      TELEGRAM_ENABLED: ${TELEGRAM_ENABLED:-false}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_ALLOWED_USER_IDS: ${TELEGRAM_ALLOWED_USER_IDS:-}
+      TELEGRAM_STATUS_CHAT_ID: ${TELEGRAM_STATUS_CHAT_ID:-}
+      TELEGRAM_STATUS_TIMEZONE: ${TELEGRAM_STATUS_TIMEZONE:-Europe/Berlin}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1/api/ping')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - highfishNetwork
+networks:
+  highfishNetwork:
+    external: true

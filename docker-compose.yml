@@ -9,12 +9,12 @@ services:
     environment:
       HOST: 0.0.0.0
       PORT: "80"
-      STORAGE_MODE: ${STORAGE_MODE:-local}
-      MUSIC_ROOT: /music
+      STORAGE_MODE: ${STORAGE_MODE:-host}
+      MUSIC_ROOT: ${MUSIC_ROOT:?Set MUSIC_ROOT to the exact existing host music directory}
       SMB_HOST: ${SMB_HOST:-}
       SMB_SHARE: ${SMB_SHARE:-}
       SMB_PATH: ${SMB_PATH:-}
-      SMB_USER: ${SMB_USER:-user}
+      SMB_USER: ${SMB_USER:-}
       SMB_PASS: ${SMB_PASS:-}
       SMB_DOMAIN: ${SMB_DOMAIN:-}
       SMB_PORT: ${SMB_PORT:-445}
@@ -35,7 +35,11 @@ services:
       TELEGRAM_STATUS_CHAT_ID: ${TELEGRAM_STATUS_CHAT_ID:-}
       TELEGRAM_STATUS_TIMEZONE: ${TELEGRAM_STATUS_TIMEZONE:-Europe/Berlin}
     volumes:
-      - ${MUSIC_HOST_PATH:-/mnt/USBHDD_MP3z}:/music:rw
+      - type: bind
+        source: ${MUSIC_ROOT:?Set MUSIC_ROOT to the exact existing host music directory}
+        target: ${MUSIC_ROOT:?Set MUSIC_ROOT to the exact existing host music directory}
+        bind:
+          create_host_path: false
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1/api/ping')"]
       interval: 30s
