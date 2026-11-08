@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">hAI.highfishMP3zPlayer</string>
+    <string name="title_activity_main">hAI.highfishMP3zPlayer</string>
+    <string name="package_name">de.highfishai.mp3zplayer</string>
+    <string name="custom_url_scheme">de.highfishai.mp3zplayer</string>
+</resources>
