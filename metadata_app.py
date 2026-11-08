@@ -67,7 +67,6 @@ def main():
         if request.path == '/' and response.status_code == 200:
             response.direct_passthrough = False
             html = patch_player(response.get_data(as_text=True))
-            html = html.replace('</body>', '<a href="/id3-editor" style="position:fixed;right:12px;top:65px;z-index:190;background:var(--surf);color:var(--text);padding:10px">ID3-Editor</a></body>')
             response.set_data(html)
             response.headers.pop('ETag', None)
             response.headers.pop('Last-Modified', None)
