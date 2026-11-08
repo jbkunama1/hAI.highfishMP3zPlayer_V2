@@ -1,0 +1,18 @@
+{
+  "name": "highfish-mp3zplayer-android",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Optional Capacitor Android debug APK for hAI.highfishMP3zPlayer",
+  "scripts": {
+    "build:web": "bash scripts/build-web.sh",
+    "cap:sync": "npm run build:web && npx cap sync android",
+    "android:debug": "npm run cap:sync && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/core": "^7.4.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3"
+  }
+}
