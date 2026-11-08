@@ -9,6 +9,7 @@ from view_modes import install_views
 from mcp_security import settings as mcp_security_settings
 from storage_config import configure_storage
 from playlist_integration import install_playlists, enable_telegram_playlists
+from ai_playlist import install_ai
 
 
 def main():
@@ -27,6 +28,7 @@ def main():
         install_views(backend)
         lib = install_library(server, backend)
         install_playlists(server, lib)
+        install_ai(lib)
         enable_telegram_playlists()
         start_bot(lib)
         return server
