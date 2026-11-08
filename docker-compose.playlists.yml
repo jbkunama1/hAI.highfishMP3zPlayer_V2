@@ -1,0 +1,13 @@
+# Combine with the existing compose file. Prepare an owned host directory first.
+services:
+  mp3z:
+    environment:
+      MP3Z_DATA_DIR: /data
+      MCP_PLAYLIST_WRITE_ENABLED: ${MCP_PLAYLIST_WRITE_ENABLED:-false}
+      TELEGRAM_PLAYLIST_WRITE_ENABLED: ${TELEGRAM_PLAYLIST_WRITE_ENABLED:-false}
+    volumes:
+      - type: bind
+        source: ${MP3Z_DATA_HOST:?Set an existing writable application-data directory}
+        target: /data
+        bind:
+          create_host_path: false
