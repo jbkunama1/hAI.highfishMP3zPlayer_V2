@@ -12,6 +12,7 @@ from playlist_integration import install_playlists, enable_telegram_playlists
 from ai_playlist import install_ai
 from ai_catalog import install_catalog
 from ai_studio import install_studio, enable_telegram_studio
+from music_themes import install_themes
 
 
 def main():
@@ -28,6 +29,7 @@ def main():
         install_login(backend)
         install_admin(backend)
         install_views(backend)
+        install_themes(backend)
         lib = install_library(server, backend)
         install_playlists(server, lib)
         install_ai(lib)
