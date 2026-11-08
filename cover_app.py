@@ -11,6 +11,7 @@ from storage_config import configure_storage
 from playlist_integration import install_playlists, enable_telegram_playlists
 from ai_playlist import install_ai
 from ai_catalog import install_catalog
+from ai_studio import install_studio, enable_telegram_studio
 
 
 def main():
@@ -31,7 +32,9 @@ def main():
         install_playlists(server, lib)
         install_ai(lib)
         install_catalog(lib)
+        install_studio(server, lib)
         enable_telegram_playlists()
+        enable_telegram_studio()
         start_bot(lib)
         return server
 
