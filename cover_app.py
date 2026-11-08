@@ -13,6 +13,7 @@ from ai_playlist import install_ai
 from ai_catalog import install_catalog
 from ai_studio import install_studio, enable_telegram_studio
 from music_themes import install_themes
+from appearance import install_preferences
 
 
 def main():
@@ -35,6 +36,7 @@ def main():
         install_ai(lib)
         install_catalog(lib)
         install_studio(server, lib)
+        install_preferences(backend, lib.playlists.filename)
         enable_telegram_playlists()
         enable_telegram_studio()
         start_bot(lib)
