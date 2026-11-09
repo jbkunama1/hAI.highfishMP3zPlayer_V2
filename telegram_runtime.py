@@ -76,7 +76,13 @@ def send_status(bot,chat,reason,started,zone,stop):
             except Exception:
                 bot.call('sendMessage',{'chat_id':chat,'text':f'MP3z | {reason}\nDienst: HTTP bereit\nBibliotheksstatus derzeit nicht abrufbar.'})
                 return True
-            bot.call('sendMessage',{'chat_id':chat,'text':message(status,reason,time.monotonic()-started,datetime.now(zone))})
+            uptime=time.monotonic()-started
+            now=datetime.now(zone)
+            if reason=='Dienst gestartet':
+                from telegram_status_card import send_startup
+                send_startup(bot,chat,status,uptime,now)
+            else:
+                bot.call('sendMessage',{'chat_id':chat,'text':message(status,reason,uptime,now)})
             return True
         except Exception as exc:
             LOG.warning('Telegram status delivery failed; no credentials logged')
