@@ -13,6 +13,8 @@ from telegram_bot import BotError
 from library_tools import public_url
 
 LOG=logging.getLogger('mp3z.telegram.runtime')
+HOME_CALLBACK='mp3z:home'
+MESSAGE_METHODS={'sendMessage','sendPhoto','sendDocument','sendAudio','sendVideo','sendAnimation','sendVoice','editMessageText','editMessageCaption','editMessageReplyMarkup'}
 
 
 def next_daily(now):
@@ -52,8 +54,36 @@ class RuntimeBot(Bot):
         markup=data.get('reply_markup')
         if isinstance(markup,dict) and 'inline_keyboard' in markup:
             rows=[[b for b in row if 'url' not in b or b.get('url')] for row in markup['inline_keyboard']]
-            data['reply_markup']={**markup,'inline_keyboard':[row for row in rows if row]}
+            markup={**markup,'inline_keyboard':[row for row in rows if row]}
+            data['reply_markup']=markup
+        if method in MESSAGE_METHODS and str(data.get('chat_id','')) in self.allowed and (markup is None or isinstance(markup,dict) and 'inline_keyboard' in markup):
+            rows=[]
+            for row in (markup or {}).get('inline_keyboard',[]):
+                kept=[]
+                for button in row:
+                    key=button.get('callback_data')
+                    entry=self.callbacks.get(key)
+                    if key==HOME_CALLBACK or entry and entry[2][0]=='menu':
+                        continue
+                    kept.append(button)
+                if kept:rows.append(kept)
+            rows.append([{'text':'🏠 Hauptmenü','callback_data':HOME_CALLBACK}])
+            data['reply_markup']={**(markup or {}),'inline_keyboard':rows}
         return super().call(method,data,image=image)
+
+    def handle(self,update):
+        cb=update.get('callback_query')
+        if not cb or cb.get('data')!=HOME_CALLBACK:
+            return super().handle(update)
+        uid=str(cb.get('from',{}).get('id',''))
+        chat=cb.get('message',{}).get('chat',{})
+        if uid not in self.allowed or chat.get('type')!='private':
+            return
+        self.call('answerCallbackQuery',{'callback_query_id':cb['id']})
+        now=time.time()
+        if now-self.last.get(uid,0)<0.5:return
+        self.last[uid]=now
+        return self.menu(uid,chat['id'])
 
 
 def wait_ready(port,stop):

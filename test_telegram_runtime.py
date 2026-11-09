@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import patch, Mock
 from zoneinfo import ZoneInfo
-from telegram_runtime import RuntimeBot, next_daily, status_chat, message, start_bot, send_status
+from telegram_runtime import RuntimeBot, next_daily, status_chat, message, start_bot, send_status, HOME_CALLBACK
 
 class RuntimeTests(unittest.TestCase):
     def test_schedule_today_and_tomorrow(self):
@@ -26,7 +26,7 @@ class RuntimeTests(unittest.TestCase):
         self.assertIsNone(bot.url)
         with patch('telegram_runtime.Bot.call',return_value=[]) as call:
             bot.call('sendMessage',{'chat_id':'1','reply_markup':{'inline_keyboard':[[{'text':'bad','url':None}],[{'text':'ok','callback_data':'x'}]]}})
-            self.assertEqual(call.call_args.args[1]['reply_markup']['inline_keyboard'],[[{'text':'ok','callback_data':'x'}]])
+            self.assertEqual(call.call_args.args[1]['reply_markup']['inline_keyboard'],[[{'text':'ok','callback_data':'x'}],[{'text':'🏠 Hauptmenü','callback_data':HOME_CALLBACK}]])
     def test_config_error_does_not_crash(self):
         with patch.dict('os.environ',{'TELEGRAM_ENABLED':'true','TELEGRAM_BOT_TOKEN':'','TELEGRAM_ALLOWED_USER_IDS':'1'}):
             with patch('telegram_runtime.threading.Thread') as thread:
@@ -40,5 +40,34 @@ class RuntimeTests(unittest.TestCase):
         stop=SimpleNamespace(wait=Mock(),is_set=lambda:False)
         self.assertTrue(send_status(bot,'1','Test',0,ZoneInfo('Europe/Berlin'),stop))
         self.assertEqual(bot.call.call_count,2)
+    def test_home_on_photos_text_and_edits(self):
+        bot=RuntimeBot(None,'fake',['1'],'')
+        with patch('telegram_runtime.Bot.call',return_value=[]) as call:
+            for method in ('sendMessage','sendPhoto','editMessageCaption'):
+                bot.call(method,{'chat_id':1})
+                data=call.call_args.args[1]
+                self.assertEqual(data['reply_markup']['inline_keyboard'][-1][0]['callback_data'],HOME_CALLBACK)
+                bot.call(method,data)
+                self.assertEqual(call.call_args.args[1],data)
+    def test_home_survives_missing_callback_cache_and_rejects_groups(self):
+        bot=RuntimeBot(None,'fake',['1'],'')
+        update={'callback_query':{'id':'x','data':HOME_CALLBACK,'from':{'id':1},'message':{'chat':{'id':1,'type':'private'}}}}
+        with patch.object(bot,'menu') as menu, patch('telegram_runtime.Bot.call'):
+            bot.handle(update);menu.assert_called_once_with('1',1)
+            menu.reset_mock();update['callback_query']['from']['id']=2
+            bot.handle(update);menu.assert_not_called()
+            update['callback_query']['from']['id']=1
+            update['callback_query']['message']['chat']['type']='group'
+            bot.handle(update);menu.assert_not_called()
+    def test_old_menu_replaced_without_mutating_keyboard(self):
+        bot=RuntimeBot(None,'fake',['1'],'')
+        bot.callbacks['old']=('1',1,('menu','',0),0)
+        data={'chat_id':1,'reply_markup':{'inline_keyboard':[[{'text':'Old','callback_data':'old'},{'text':'Action','callback_data':'action'}]]}}
+        with patch('telegram_runtime.Bot.call') as call:
+            bot.call('sendMessage',data)
+            rows=call.call_args.args[1]['reply_markup']['inline_keyboard']
+            self.assertEqual(rows[0],[{'text':'Action','callback_data':'action'}])
+            self.assertEqual(rows[-1][0]['callback_data'],HOME_CALLBACK)
+            self.assertEqual(len(data['reply_markup']['inline_keyboard'][0]),2)
 
 if __name__=='__main__':unittest.main()
