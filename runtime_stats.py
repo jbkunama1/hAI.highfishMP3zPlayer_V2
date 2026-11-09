@@ -1,4 +1,4 @@
-"""Persistent single-writer service counters and successful index snapshots."""
+"""Service statistics in the existing application SQLite database."""
 import atexit
 import copy
 import fcntl
@@ -6,9 +6,10 @@ import json
 import logging
 import math
 import os
-import tempfile
+import sqlite3
 import threading
 import time
+from contextlib import closing
 from pathlib import Path
 
 LOG = logging.getLogger('mp3z.stats')
@@ -26,30 +27,43 @@ class Stats:
         self.persistent = False
         self.data = dict(version=1, uptime_seconds=0, since=time.time(), last_index=None, **dict.fromkeys(COUNTERS, 0))
         try:
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-            self.writer = open(str(self.path)+'.lock', 'a')
+            # Lock the existing database inode; no separate directory or lock file.
+            self.writer = open(self.path, 'rb')
             fcntl.flock(self.writer, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            self.persistent = True
-            if self.path.exists():
+            with closing(self.connect()) as db:
+                with db:
+                    db.execute('CREATE TABLE IF NOT EXISTS mp3z_runtime_stats (id INTEGER PRIMARY KEY CHECK(id=1), data TEXT NOT NULL)')
+                row = db.execute('SELECT data FROM mp3z_runtime_stats WHERE id=1').fetchone()
+            raw = row[0] if row else None
+            legacy = os.getenv('MP3Z_STATS_PATH', '')
+            if raw is None and legacy and Path(legacy).resolve() != self.path.resolve():
                 try:
-                    if self.path.stat().st_size > 65536:
-                        raise ValueError()
-                    loaded = json.loads(self.path.read_text(encoding='utf-8'))
+                    old = Path(legacy)
+                    if old.is_file() and old.stat().st_size <= 65536:
+                        raw = old.read_text(encoding='utf-8')
+                except OSError:
+                    LOG.warning('Legacy statistics unavailable; database remains usable')
+            if raw is not None:
+                try:
+                    if len(raw) > 65536: raise ValueError()
+                    loaded = json.loads(raw)
                     self.validate(loaded)
                     self.data = {k: loaded[k] for k in self.data}
                     if self.data['last_index'] is not None:
                         self.data['last_index'] = {k: self.data['last_index'][k] for k in ('at', 'duration', 'files', 'bytes')}
                 except (ValueError, TypeError, KeyError):
-                    os.replace(self.path, str(self.path)+'.corrupt')
-                    LOG.warning('Statistics reset: invalid saved state; previous file quarantined')
-        except (OSError, ValueError, TypeError):
-            self.persistent = False
+                    LOG.warning('Invalid statistics row ignored; other database tables unchanged')
+            self.persistent = True
+        except (OSError, sqlite3.Error, ValueError, TypeError):
             LOG.warning('Statistics persistence unavailable; using session-only counters')
         pending = max(0, self.data['index_runs']-self.data['index_successes']-self.data['index_failures'])
         self.data['index_failures'] += pending
         self.base = self.data['uptime_seconds']
         self.data['starts'] += 1
         self.save()
+
+    def connect(self):
+        return sqlite3.connect(self.path.resolve().as_uri()+'?mode=rw', uri=True, timeout=10)
 
     @staticmethod
     def validate(data):
@@ -84,23 +98,16 @@ class Stats:
         with self.lock:
             if not self.persistent or self.closed:
                 return
-            temporary = None
             try:
                 data = self.snapshot()
                 data.pop('session_seconds'); data.pop('persistent')
-                with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', dir=self.path.parent, delete=False) as out:
-                    temporary = out.name
-                    json.dump(data, out, allow_nan=False)
-                    out.flush(); os.fsync(out.fileno())
-                os.replace(temporary, self.path)
-                temporary = None
-            except (OSError, ValueError, TypeError):
+                raw = json.dumps(data, allow_nan=False)
+                with closing(self.connect()) as db:
+                    with db:
+                        db.execute('INSERT INTO mp3z_runtime_stats(id,data) VALUES(1,?) ON CONFLICT(id) DO UPDATE SET data=excluded.data', (raw,))
+            except (OSError, sqlite3.Error, ValueError, TypeError):
                 self.persistent = False
                 LOG.warning('Statistics checkpoint failed; persistence disabled for this process')
-            finally:
-                if temporary:
-                    try: os.unlink(temporary)
-                    except OSError: pass
 
     def record(self, key, last=None):
         with self.lock:
@@ -121,10 +128,9 @@ class Stats:
             self.save()
 
 
-def install(backend):
+def install(backend, filename):
     if hasattr(backend, 'runtime_stats'):
         return backend.runtime_stats
-    filename = os.getenv('MP3Z_STATS_PATH', str(Path.home()/'.local/state/mp3z/stats.json'))
     stats = backend.runtime_stats = Stats(filename)
     atexit.register(stats.close)
     threading.Thread(target=stats.run, name='mp3z-stats', daemon=True).start()

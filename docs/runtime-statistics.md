@@ -1,47 +1,42 @@
-# Dauerhafte Betriebsstatistik
+# Betriebsstatistik in der vorhandenen SQLite-Datenbank
 
-Aktiv im Startpfad `python cover_app.py`, auch bei deaktiviertem Telegram.
-Die alten Minimalstarter binden dieses Zusatzmodul nicht ein.
+Der Startpfad `python cover_app.py` uebergibt exakt `lib.playlists.filename`
+an die Statistik. Somit verwenden Playlists, Darstellungseinstellungen und
+Betriebsstatistik dieselbe vorhandene `playlists.sqlite3`.
+Die eigene Tabelle `mp3z_runtime_stats` speichert einen versionierten
+Statistikdatensatz. Andere Tabellen werden weder ersetzt noch geloescht.
+Es gibt keinen neuen Statistikordner, keinen zusaetzlichen Bind-Mount,
+keine neue Datenbankdatei und keine separate JSON-/Lockdatei.
+SQLite kann wie bisher temporaere Journal-/WAL-Dateien im Datenbankordner verwenden.
 
-## Container / Portainer
+Vorhandene Datenbankfreigaben und Schreibrechte bleiben unveraendert.
+Die Statistik hat dieselbe Persistenz wie diese SQLite-Datei: Ist deren
+bisheriger Speicherort nicht persistent, ueberlebt auch sie keine
+Container-Neuerstellung. Der separate Mount /opt/mp3z-data und
+MP3Z_STATS_PATH aus der vorherigen Haupt-Compose-Version sind entfernt.
+Bereits vorhandene benutzerdefinierte DB-Mounts im eigenen Stack beibehalten.
 
-Die Hauptdatei docker-compose.yml bindet MP3Z_DATA_DIR (Standard:
-/opt/mp3z-data) nach /data/mp3z ein und setzt MP3Z_STATS_PATH=/data/mp3z/stats.json.
-Das Hostverzeichnis MUSS vor dem Deployment existieren und fuer PUID/PGID
-(Standard 1000:1000) schreibbar sein. Beispiel auf dem Host:
+Optional: Falls die fruehere JSON-Statistik bereits benutzt wurde, kann
+MP3Z_STATS_PATH einmalig auf die noch erreichbare alte JSON-Datei zeigen.
+Sie wird nur importiert, wenn die SQLite-Statistiktabelle noch keinen Datensatz hat.
+Die alte Datei bleibt unveraendert; danach ist diese Variable nicht mehr erforderlich.
+Es wird niemals eine vorhandene SQLite-Datei als JSON umbenannt oder geloescht.
 
-```sh
-sudo install -d -m 0750 -o 1000 -g 1000 /opt/mp3z-data
-```
+Gesamtlaufzeit zaehlt laufende Sitzungen ab Installation, keine Ausfallzeit.
+Checkpoint alle 60 Sekunden und bei normalem Prozessende; bei hartem Abbruch
+koennen seit dem letzten erfolgreichen Checkpoint bis zu 60 Sekunden fehlen.
+Unterbrochene Indexversuche werden beim Neustart als Fehler gezaehlt.
+Dateianzahl und GB (Bytes/1.000.000.000) beziehen sich auf Audiodateien des
+letzten erfolgreichen Scans. Ein Fehler ersetzt diesen Stand nicht.
+Fehlende Dateigroessen werden als unbekannt markiert. Die Groessenabfrage
+erfolgt im Hintergrundscan; SMB benoetigt dafuer Metadatenzugriffe pro Datei.
+Beide Telegram-Karten unterscheiden gespeicherten Stand und aktuelle Sitzung.
 
-Bei anderen IDs/Pfaden entsprechend anpassen. Nicht als root betreiben und
-keine Schreibrechte am Musikverzeichnis aendern. Andere Compose-/Portainer-
-Varianten benoetigen denselben zusaetzlichen Mount und MP3Z_STATS_PATH.
-Das bestehende Musik-Mount bleibt unveraendert. Fuer Native/systemd:
-MP3Z_STATS_PATH auf eine dem Dienstbenutzer gehoerende Datei setzen;
-Standard ist ~/.local/state/mp3z/stats.json. Dieses Verzeichnis sichern.
-
-## Bedeutung und Grenzen
-
-- Gesamtlaufzeit summiert nur laufende Sitzungen ab Installation dieses Features.
-  Fruehere Laufzeiten/Indizierungen sind nicht rekonstruierbar; Ausfallzeit zaehlt nicht.
-- Checkpoint alle 60 Sekunden und bei normalem Prozessende (atexit).
-  Bei hartem Abbruch koennen bis zu 60 Sekunden ungesicherte Laufzeit fehlen,
-  sofern die vorherigen Checkpoints erfolgreich waren.
-- Starts und Indexversuche/Erfolge/Fehler werden gespeichert. Ein beim Absturz
-  unterbrochener Versuch wird beim naechsten Start als Fehler verbucht.
-- Letzter Index bedeutet letzter erfolgreich abgeschlossener Scan, nicht letzter Versuch.
-  Fehlgeschlagene Scans ersetzen weder Eintraege noch gespeicherte Erfolgswerte.
-- Dateianzahl und Groesse betreffen indizierte Audiodateien, nicht Cover oder Backups.
-  GB = Bytes / 1.000.000.000. Eine nicht lesbare Dateigroesse macht die Gesamtgroesse unbekannt.
-  Die Groessenabfrage erfolgt im Hintergrundscan, nicht beim Statusabruf; bei SMB
-  bedeutet dies zusaetzliche Metadatenzugriffe pro Audiodatei.
-- Nach Neustart wird der gespeicherte Stand getrennt vom frischen Live-Index angezeigt.
-  Ein leerer erfolgreicher Scan ist 0 Dateien / 0 GB; fehlende Historie ist unbekannt.
-- Nur ein Prozess darf die Statistikdatei schreiben (flock). Bei Konflikten oder
-  Schreibfehlern laeuft der Player weiter, aber die Karten warnen vor fehlender Persistenz.
-  Nach Behebung der Rechte ist ein Neustart erforderlich. Beschaedigte Daten werden
-  einmalig als stats.json.corrupt aufbewahrt; Zaehler starten neu.
-- Speicherung enthaelt nur aggregierte Werte, keine Dateipfade oder Zugangsdaten.
+Nur ein Statistikschreiber pro DB (flock auf der bestehenden DB-Datei).
+Normale SQLite-Transaktionen fuer Playlists bleiben moeglich. Bei fehlender
+oder nicht schreibbarer DB laeuft die Statistik nur im Speicher und warnt;
+nach Behebung ist ein Neustart erforderlich. Alte Minimalstarter ohne
+cover_app binden dieses Zusatzmodul nicht ein. Vorherige Laufzeiten lassen
+sich nicht rekonstruieren. Datenbank mit dem vorhandenen Backupverfahren sichern.
 
 Tests: python -m unittest test_runtime_stats.py

@@ -34,13 +34,7 @@ services:
       TELEGRAM_ALLOWED_USER_IDS: ${TELEGRAM_ALLOWED_USER_IDS:-}
       TELEGRAM_STATUS_CHAT_ID: ${TELEGRAM_STATUS_CHAT_ID:-}
       TELEGRAM_STATUS_TIMEZONE: ${TELEGRAM_STATUS_TIMEZONE:-Europe/Berlin}
-      MP3Z_STATS_PATH: /data/mp3z/stats.json
     volumes:
-      - type: bind
-        source: ${MP3Z_DATA_DIR:-/opt/mp3z-data}
-        target: /data/mp3z
-        bind:
-          create_host_path: false
       - type: bind
         source: ${MUSIC_ROOT:?Set MUSIC_ROOT to the exact existing host music directory}
         target: ${MUSIC_ROOT:?Set MUSIC_ROOT to the exact existing host music directory}

@@ -25,7 +25,6 @@ def main():
     original = metadata_app.build_mcp
 
     def extended(service, backend):
-        install_stats(backend)
         server = original(service, backend)
         register_mcp(server, service)
         install_web(backend, service)
@@ -35,6 +34,7 @@ def main():
         install_themes(backend)
         lib = install_library(server, backend)
         install_playlists(server, lib)
+        install_stats(backend, lib.playlists.filename)
         install_ai(lib)
         install_catalog(lib)
         install_studio(server, lib)
