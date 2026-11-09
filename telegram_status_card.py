@@ -1,77 +1,82 @@
-"""Locally rendered Telegram status cards; never include paths or credentials."""
+"""Graphical Telegram status with explicitly labelled durable statistics."""
 import io
+from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 
 
-def fields(status, uptime):
-    try:
-        count = max(0, int(status.get('total_files', 0)))
-    except (ValueError, TypeError, OverflowError):
-        count = 0
-    seconds = max(0, int(uptime))
-    return {
-        'count': f'{count:,}'.replace(',', '.'),
-        'storage': {'smb': 'SMB', 'local': 'Lokal'}.get(str(status.get('storage', '')).lower(), 'Unbekannt'),
-        'index': 'Wird aufgebaut' if status.get('building') else 'Ruhend',
-        'uptime': f'{seconds // 3600} h {seconds % 3600 // 60} min',
-    }
+def duration(value):
+    if value is None: return 'noch nicht erfasst'
+    minutes = max(0, int(value)) // 60
+    return f'{minutes // 1440} d {minutes % 1440 // 60} h {minutes % 60} min'
+
+
+def rows(status, uptime, now):
+    stats = status.get('stats') or {}
+    last = stats.get('last_index') or {}
+    count = last.get('files')
+    size = last.get('bytes')
+    stamp = last.get('at')
+    date = datetime.fromtimestamp(stamp, now.tzinfo).strftime('%d.%m.%Y %H:%M %Z') if stamp is not None else 'noch nicht erfasst'
+    runs = stats.get('index_runs')
+    return [
+        ('Dateien (letzter erfolgreicher Index)', f'{count:,}'.replace(',', '.') if count is not None else 'noch nicht erfasst'),
+        ('Größe der Audiodateien', f'{size / 1_000_000_000:.2f} GB' if size is not None else 'noch nicht vollständig erfasst'),
+        ('Gesamtlaufzeit', duration(stats.get('uptime_seconds'))),
+        ('Aktuelle Sitzung', duration(stats.get('session_seconds', uptime))),
+        ('Dienststarts', str(stats.get('starts', 'noch nicht erfasst'))),
+        ('Indizierungen: gesamt / erfolgreich / Fehler', f"{runs} / {stats.get('index_successes', 0)} / {stats.get('index_failures', 0)}" if runs is not None else 'noch nicht erfasst'),
+        ('Letzter erfolgreicher Index', date),
+        ('Dauer dieses Indexlaufs', f"{last['duration']:.1f} s" if 'duration' in last else 'noch nicht erfasst'),
+    ]
 
 
 def caption(status, uptime, now, daily=False):
-    values = fields(status, uptime)
-    index = '🟡 Wird aufgebaut' if status.get('building') else '⚪ Ruhend'
-    heading = '🌙 <b>MP3z · Tagesstatus 22:00</b>\n📊 Aktueller Bibliotheksstatus' if daily else '🎧 <b>MP3z ist gestartet</b>\n🟢 <b>HTTP bereit</b>'
-    return (f'{heading}\n\n'
-            f'🎵 Titel im Index: <b>{values["count"]}</b>\n'
-            f'💾 Speicher: {values["storage"]}\n'
-            f'📚 Index: {index}\n'
-            f'⏱ Laufzeit: {values["uptime"]}\n\n'
-            f'🕒 {now:%d.%m.%Y · %H:%M %Z}')
+    from html import escape
+    title = '🌙 MP3z · Tagesstatus 22:00' if daily else '🎧 MP3z ist gestartet'
+    data = status.get('stats') or {}
+    state = '🟡 Index wird aufgebaut' if status.get('building') else '⚪ Index ruhend'
+    source = 'aktueller erfolgreicher Scan' if data.get('snapshot_source') == 'current' else 'zuletzt gespeicherter Stand'
+    lines = [f'<b>{title}</b>', state, f'Stand: {source}']
+    if not data.get('persistent'): lines.append('⚠ Statistik nicht dauerhaft gespeichert')
+    for label, value in rows(status, uptime, now):
+        lines.append(f'{escape(label)}: <b>{escape(value)}</b>')
+    storage = {'smb': 'SMB', 'local': 'Lokal'}.get(status.get('storage'), 'unbekannt')
+    lines.append(f'Speicher: {storage}')
+    lines.append(now.strftime('%d.%m.%Y %H:%M %Z'))
+    return '\n'.join(lines)
 
 
 def render(status, uptime, now, daily=False):
-    values = fields(status, uptime)
-    image = Image.new('RGB', (1000, 580), '#101522')
+    image = Image.new('RGB', (1100, 940), '#101522')
     draw = ImageDraw.Draw(image)
-    for x in range(1000):
-        t = x / 999
-        draw.line((x, 0, x, 9), fill=(int(70 + 160*t), int(200 - 65*t), int(220 - 110*t)))
-
     def font(size):
-        try:
-            return ImageFont.truetype('DejaVuSans.ttf', size)
+        try: return ImageFont.truetype('DejaVuSans.ttf', size)
         except OSError:
-            try:
-                return ImageFont.load_default(size=size)
-            except TypeError:
-                return ImageFont.load_default()
-
-    def text(x, y, value, size=25, color='#ecf3ff', width=900):
-        value = str(value)
-        selected = font(size)
+            try: return ImageFont.load_default(size=size)
+            except TypeError: return ImageFont.load_default()
+    def text(x, y, value, size=24, color='#edf5ff', width=960):
+        value = str(value); selected = font(size)
         while draw.textbbox((0, 0), value, font=selected)[2] > width and len(value) > 1:
             value = value[:-2] + '~'
         draw.text((x, y), value, fill=color, font=selected)
-
-    text(44, 32, 'MP3z', 52)
-    text(46, 101, 'DEINE MUSIK. DEIN SERVER.', 18, '#a7b6cc')
-    draw.rounded_rectangle((736, 42, 956, 96), radius=25, fill='#233858' if daily else '#153d35')
-    draw.ellipse((753, 61, 767, 75), fill='#93c5fd' if daily else '#6ee7b7')
-    text(783, 55, 'TAGESSTATUS' if daily else 'HTTP BEREIT', 18, '#bfdbfe' if daily else '#a4f4d3', 160)
-    text(44, 146, 'Tagesstatus 22:00' if daily else 'Dienst gestartet', 32)
-    items = [('TITEL IM INDEX', values['count']), ('SPEICHER', values['storage']),
-             ('INDEX', values['index']), ('LAUFZEIT', values['uptime'])]
-    for i, (label, value) in enumerate(items):
-        x, y = 44 + (i % 2)*466, 210 + (i // 2)*140
-        draw.rounded_rectangle((x, y, x+442, y+120), radius=18, fill='#1b2638', outline='#304059', width=2)
-        text(x+22, y+17, label, 16, '#a7b6cc', 398)
-        color = '#fbbf60' if label == 'INDEX' and status.get('building') else '#edf5ff'
-        text(x+22, y+48, value, 32, color, 398)
-    text(44, 523, now.strftime('%d.%m.%Y  %H:%M %Z'), 19, '#a7b6cc')
-    text(735, 523, 'HIGHFISH AI', 19, '#7dd3d6', 220)
-    output = io.BytesIO()
-    image.save(output, 'JPEG', quality=90, optimize=True)
-    return output.getvalue()
+    for x in range(1100):
+        t = x / 1099
+        draw.line((x, 0, x, 9), fill=(int(70+160*t), int(200-65*t), int(220-110*t)))
+    text(40, 30, 'MP3z', 48)
+    text(40, 95, 'Tagesstatus 22:00' if daily else 'Dienst gestartet', 30)
+    data = status.get('stats') or {}
+    text(40, 145, 'Index wird aufgebaut' if status.get('building') else 'Index ruhend', 22, '#fbbf60' if status.get('building') else '#93c5fd')
+    source = 'Aktueller erfolgreicher Scan' if data.get('snapshot_source') == 'current' else 'Zuletzt gespeicherter Stand'
+    text(40, 185, source, 20, '#a7b6cc')
+    for i, (label, value) in enumerate(rows(status, uptime, now)):
+        x, y = 40+(i % 2)*520, 235+(i // 2)*145
+        draw.rounded_rectangle((x,y,x+500,y+125),radius=18,fill='#1b2638',outline='#304059',width=2)
+        text(x+18,y+15,label,16,'#a7b6cc',464)
+        text(x+18,y+52,value,25,'#edf5ff',464)
+    text(40, 838, 'Persistenz aktiv' if data.get('persistent') else 'WARNUNG: Statistik nur im Arbeitsspeicher', 21, '#6ee7b7' if data.get('persistent') else '#fbbf60')
+    text(40, 890, now.strftime('%d.%m.%Y %H:%M %Z')+'  |  HIGHFISH AI', 20, '#a7b6cc')
+    out = io.BytesIO(); image.save(out, 'JPEG', quality=90, optimize=True)
+    return out.getvalue()
 
 
 def send_startup(bot, chat, status, uptime, now, daily=False):

@@ -14,6 +14,7 @@ from ai_catalog import install_catalog
 from ai_studio import install_studio, enable_telegram_studio
 from music_themes import install_themes
 from appearance import install_preferences
+from runtime_stats import install as install_stats
 
 
 def main():
@@ -24,6 +25,7 @@ def main():
     original = metadata_app.build_mcp
 
     def extended(service, backend):
+        install_stats(backend)
         server = original(service, backend)
         register_mcp(server, service)
         install_web(backend, service)
