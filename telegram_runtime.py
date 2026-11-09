@@ -78,9 +78,9 @@ def send_status(bot,chat,reason,started,zone,stop):
                 return True
             uptime=time.monotonic()-started
             now=datetime.now(zone)
-            if reason=='Dienst gestartet':
+            if reason in ('Dienst gestartet','Tagesstatus 22:00'):
                 from telegram_status_card import send_startup
-                send_startup(bot,chat,status,uptime,now)
+                send_startup(bot,chat,status,uptime,now,daily=reason=='Tagesstatus 22:00')
             else:
                 bot.call('sendMessage',{'chat_id':chat,'text':message(status,reason,uptime,now)})
             return True

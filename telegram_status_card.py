@@ -1,4 +1,4 @@
-"""Locally rendered Telegram startup card; never includes paths or credentials."""
+"""Locally rendered Telegram status cards; never include paths or credentials."""
 import io
 from PIL import Image, ImageDraw, ImageFont
 
@@ -17,11 +17,11 @@ def fields(status, uptime):
     }
 
 
-def caption(status, uptime, now):
+def caption(status, uptime, now, daily=False):
     values = fields(status, uptime)
     index = '🟡 Wird aufgebaut' if status.get('building') else '⚪ Ruhend'
-    return (f'🎧 <b>MP3z ist gestartet</b>\n'
-            f'🟢 <b>HTTP bereit</b>\n\n'
+    heading = '🌙 <b>MP3z · Tagesstatus 22:00</b>\n📊 Aktueller Bibliotheksstatus' if daily else '🎧 <b>MP3z ist gestartet</b>\n🟢 <b>HTTP bereit</b>'
+    return (f'{heading}\n\n'
             f'🎵 Titel im Index: <b>{values["count"]}</b>\n'
             f'💾 Speicher: {values["storage"]}\n'
             f'📚 Index: {index}\n'
@@ -29,7 +29,7 @@ def caption(status, uptime, now):
             f'🕒 {now:%d.%m.%Y · %H:%M %Z}')
 
 
-def render(status, uptime, now):
+def render(status, uptime, now, daily=False):
     values = fields(status, uptime)
     image = Image.new('RGB', (1000, 580), '#101522')
     draw = ImageDraw.Draw(image)
@@ -55,10 +55,10 @@ def render(status, uptime, now):
 
     text(44, 32, 'MP3z', 52)
     text(46, 101, 'DEINE MUSIK. DEIN SERVER.', 18, '#a7b6cc')
-    draw.rounded_rectangle((736, 42, 956, 96), radius=25, fill='#153d35')
-    draw.ellipse((753, 61, 767, 75), fill='#6ee7b7')
-    text(783, 55, 'HTTP BEREIT', 18, '#a4f4d3', 160)
-    text(44, 146, 'Dienst gestartet', 32)
+    draw.rounded_rectangle((736, 42, 956, 96), radius=25, fill='#233858' if daily else '#153d35')
+    draw.ellipse((753, 61, 767, 75), fill='#93c5fd' if daily else '#6ee7b7')
+    text(783, 55, 'TAGESSTATUS' if daily else 'HTTP BEREIT', 18, '#bfdbfe' if daily else '#a4f4d3', 160)
+    text(44, 146, 'Tagesstatus 22:00' if daily else 'Dienst gestartet', 32)
     items = [('TITEL IM INDEX', values['count']), ('SPEICHER', values['storage']),
              ('INDEX', values['index']), ('LAUFZEIT', values['uptime'])]
     for i, (label, value) in enumerate(items):
@@ -74,13 +74,13 @@ def render(status, uptime, now):
     return output.getvalue()
 
 
-def send_startup(bot, chat, status, uptime, now):
-    payload = {'chat_id': chat, 'caption': caption(status, uptime, now), 'parse_mode': 'HTML'}
+def send_startup(bot, chat, status, uptime, now, daily=False):
+    payload = {'chat_id': chat, 'caption': caption(status, uptime, now, daily=daily), 'parse_mode': 'HTML'}
     url = getattr(bot, 'url', None)
     if url:
         payload['reply_markup'] = {'inline_keyboard': [[{'text': '🎧 Webplayer öffnen', 'url': url}]]}
     try:
-        image = render(status, uptime, now)
+        image = render(status, uptime, now, daily=daily)
         bot.call('sendPhoto', payload, image=image)
     except Exception:
         payload['text'] = payload.pop('caption')
