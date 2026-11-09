@@ -76,6 +76,10 @@ def install_views(backend):
     def mobile_layout_script():
         return Response(Path(__file__).with_name('mobile-layout.js').read_text(encoding='utf-8'), mimetype='application/javascript', headers={'Cache-Control':'no-store'})
 
+    @backend.app.get('/desktop-layout.js')
+    def desktop_layout_script():
+        return Response(Path(__file__).with_name('desktop-layout.js').read_text(encoding='utf-8'), mimetype='application/javascript', headers={'Cache-Control':'no-store'})
+
     @backend.app.get('/editor-search.js')
     def editor_search_script():
         return Response(EDITOR_SEARCH, mimetype='application/javascript', headers={'Cache-Control':'no-store'})
@@ -106,7 +110,7 @@ def install_views(backend):
     def add_view_modes(response):
         scripts = []
         if request.path == '/':
-            scripts = ['view-modes.js','mobile-view.js','mobile-presets.js','mobile-layout.js']
+            scripts = ['view-modes.js','mobile-view.js','mobile-presets.js','mobile-layout.js','desktop-layout.js']
         elif request.path == '/id3-editor':
             scripts = ['editor-search.js']
         if scripts and response.status_code == 200:
